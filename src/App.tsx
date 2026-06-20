@@ -23,7 +23,8 @@ import {
   Globe,
   History,
   ChevronDown,
-  Calendar
+  Calendar,
+  LogOut
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -214,18 +215,37 @@ export default function App() {
           </form>
 
           {/* Sync badge info with Sleeper avatar integration */}
-          <div className="flex items-center gap-2.5 self-start md:self-auto font-mono text-3xs border border-[#ba8659]/20 rounded-lg bg-[#0e1110] px-3 py-2 text-white/60 shadow-sm">
-            {user?.avatar ? (
-              <img 
-                src={`https://sleepercdn.com/avatars/thumbs/${user.avatar}`} 
-                alt={activeUsername} 
-                className="w-4 h-4 rounded-full object-cover border border-white/20"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <Globe size={11} className="text-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <div className="flex items-center gap-2.5 font-mono text-3xs border border-[#ba8659]/20 rounded-lg bg-[#0e1110] px-3 py-2 text-white/60 shadow-sm h-8">
+              {user?.avatar ? (
+                <img 
+                  src={`https://sleepercdn.com/avatars/thumbs/${user.avatar}`} 
+                  alt={activeUsername} 
+                  className="w-4 h-4 rounded-full object-cover border border-white/20"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <Globe size={11} className="text-emerald-400 animate-pulse" />
+              )}
+              <span>Synced: <strong className="text-purple-300">@{activeUsername}</strong></span>
+            </div>
+
+            {user && (
+              <button
+                onClick={() => {
+                  setUser(null);
+                  setUsernameInput("");
+                  setActiveUsername("");
+                  setLeagues([]);
+                  localStorage.removeItem("sleeper_username");
+                  setActiveTab("overview");
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-red-900/40 bg-red-950/20 hover:bg-red-950/55 hover:border-red-700/60 text-red-400 hover:text-red-200 transition-all cursor-pointer shadow-sm select-none"
+                title="Clear Active User"
+              >
+                <LogOut size={11} />
+              </button>
             )}
-            <span>Synced: <strong className="text-purple-300">@{activeUsername}</strong></span>
           </div>
         </div>
 
@@ -311,12 +331,12 @@ export default function App() {
                   {/* Demo/Preview Trigger */}
                   <button
                     onClick={() => {
-                      setUsernameInput("VaderFC");
-                      loadDynastyHub("VaderFC");
+                      setUsernameInput("SleeperDemo");
+                      loadDynastyHub("SleeperDemo");
                     }}
                     className="text-[10.5px] text-[#ba8659] hover:text-amber-200 font-typewriter transition-colors flex items-center gap-1.5 bg-[#ba8659]/5 border border-[#ba8659]/15 rounded-md px-3.5 py-1.5 cursor-pointer"
                   >
-                    <span>Browse Demo Account (@VaderFC)</span>
+                    <span>Browse Demo Account (@SleeperDemo)</span>
                     <span>→</span>
                   </button>
                 </div>
@@ -372,10 +392,10 @@ export default function App() {
                 Go Back
               </button>
               <button
-                onClick={() => loadDynastyHub("VaderFC")}
+                onClick={() => loadDynastyHub("SleeperDemo")}
                 className="px-4 py-1.5 bg-[#ba8659]/90 hover:bg-[#a27248] border border-[#ba8659]/30 rounded text-2xs text-white font-athletic tracking-widest uppercase cursor-pointer shadow-md transition-all"
               >
-                Explore Demo (VaderFC)
+                Explore Demo (SleeperDemo)
               </button>
             </div>
           </div>

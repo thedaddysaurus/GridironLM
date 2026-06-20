@@ -150,6 +150,17 @@ async function fetchWithCache(url: string, ttlMs: number = 5 * 60 * 1000) {
 // API: Sleeper Username search lookup
 app.get("/api/sleeper/user/:username", async (req, res) => {
   const { username } = req.params;
+  const usernameClean = username.trim().toLowerCase();
+  
+  if (usernameClean === "sleeperdemo" || usernameClean === "demo" || usernameClean === "dynastydemo") {
+    return res.json({
+      username: "SleeperDemo",
+      user_id: "demo_99999",
+      display_name: "Sleeper Demo Star",
+      avatar: "99ea7008d519bfa1199a09990e0b3c2c"
+    });
+  }
+
   try {
     const targetUrl = `https://api.sleeper.app/v1/user/${encodeURIComponent(username)}`;
     const userData = await fetchWithCache(targetUrl, 60 * 60 * 1000); // Cache user for 1 hr
@@ -207,6 +218,36 @@ app.get("/api/sleeper/trending", async (req, res) => {
 // API: Fetch user leagues across 2025 and 2026 seasons to ensure completeness
 app.get("/api/sleeper/leagues/:userId", async (req, res) => {
   const { userId } = req.params;
+  
+  if (userId === "demo_99999") {
+    return res.json([
+      {
+        "name": "Apex Dynasty Pro 2026",
+        "league_id": "demo_league_1",
+        "season": "2026",
+        "status": "in_season",
+        "total_rosters": 12,
+        "settings": { "type": 2 }
+      },
+      {
+        "name": "Superflex Empire Dynasty",
+        "league_id": "demo_league_2",
+        "season": "2026",
+        "status": "in_season",
+        "total_rosters": 12,
+        "settings": { "type": 2 }
+      },
+      {
+        "name": "Gridiron Overlords Dynasty",
+        "league_id": "demo_league_3",
+        "season": "2026",
+        "status": "in_season",
+        "total_rosters": 12,
+        "settings": { "type": 2 }
+      }
+    ]);
+  }
+
   try {
     // We poll seasons from 2020 to 2026 to catch both active and historical dynasty settings
     const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
@@ -260,6 +301,144 @@ app.get("/api/sleeper/leagues/:userId", async (req, res) => {
 app.get("/api/sleeper/league/:leagueId", async (req, res) => {
   const { leagueId } = req.params;
   const userQueryId = req.query.userId as string || "";
+
+  if (leagueId.startsWith("demo_league_")) {
+    const demoLeaguesInfo: Record<string, { name: string; userPlayers: string[]; otherPlayers: string[] }> = {
+      demo_league_1: {
+        name: "Apex Dynasty Pro 2026",
+        userPlayers: ["4046", "8183", "9531", "6794", "8112", "9493"],
+        otherPlayers: ["4866", "7564", "11521", "7848", "9484"]
+      },
+      demo_league_2: {
+        name: "Superflex Empire Dynasty",
+        userPlayers: ["4866", "8183", "7564", "8112", "11521", "9484"],
+        otherPlayers: ["4046", "9531", "6794", "9493", "7848"]
+      },
+      demo_league_3: {
+        name: "Gridiron Overlords Dynasty",
+        userPlayers: ["4046", "9488", "9531", "6794", "11521", "9493", "7848"],
+        otherPlayers: ["4866", "8183", "7564", "8112", "9484"]
+      }
+    };
+
+    const targetInfo = demoLeaguesInfo[leagueId] || demoLeaguesInfo.demo_league_1;
+
+    // Resolve user players
+    const userPlayersRes = targetInfo.userPlayers.map(id => resolvePlayer(id));
+    const userRoster: any = {
+      roster_id: 1,
+      owner_id: "demo_99999",
+      settings: {
+        wins: leagueId === "demo_league_1" ? 9 : leagueId === "demo_league_2" ? 11 : 8,
+        losses: leagueId === "demo_league_1" ? 5 : leagueId === "demo_league_2" ? 3 : 6,
+        ties: 0,
+        fpts: leagueId === "demo_league_1" ? 1980 : leagueId === "demo_league_2" ? 2150 : 1820,
+        fpts_decimal: leagueId === "demo_league_1" ? 25 : leagueId === "demo_league_2" ? 50 : 10,
+        fpts_against: 1540,
+        fpts_against_decimal: 15
+      },
+      ownerDetails: {
+        user_id: "demo_99999",
+        username: "SleeperDemo",
+        display_name: "Sleeper Demo Star",
+        avatar: null,
+        team_name: "Sleeper Demo Star"
+      },
+      players: userPlayersRes,
+      starters: userPlayersRes.slice(0, 4),
+      bench: userPlayersRes.slice(4),
+      pointsThisWeek: 136.5,
+      matchupId: 1,
+      startersIdsWithPoints: {
+        [targetInfo.userPlayers[0] || ""]: 24.5,
+        [targetInfo.userPlayers[1] || ""]: 18.2,
+        [targetInfo.userPlayers[2] || ""]: 16.8,
+        [targetInfo.userPlayers[3] || ""]: 22.1
+      }
+    };
+
+    const standings: any[] = [userRoster];
+    const otherOwners = [
+      { id: "demo_owner_2", username: "Megatron9", team: "Megatron's Revenge", wins: 10, losses: 4, fpts: 1845 },
+      { id: "demo_owner_3", username: "BradyGoat", team: "Tom's TB12", wins: 8, losses: 6, fpts: 1712 },
+      { id: "demo_owner_4", username: "RunCmc", team: "Christian Soldiers", wins: 7, losses: 7, fpts: 1680 },
+      { id: "demo_owner_5", username: "TyreekFreak", team: "Cheetah Sprint", wins: 5, losses: 9, fpts: 1520 },
+      { id: "demo_owner_6", username: "LambSauce", team: "CeeDee's Diner", wins: 3, losses: 11, fpts: 1390 }
+    ];
+
+    otherOwners.forEach((owner, idx) => {
+      const rosterId = idx + 2;
+      const otherPlayersRes = targetInfo.otherPlayers.map(id => resolvePlayer(id));
+      standings.push({
+        roster_id: rosterId,
+        owner_id: owner.id,
+        settings: {
+          wins: owner.wins,
+          losses: owner.losses,
+          ties: 0,
+          fpts: owner.fpts,
+          fpts_decimal: 80,
+          fpts_against: 1650,
+          fpts_against_decimal: 40
+        },
+        ownerDetails: {
+          user_id: owner.id,
+          username: owner.username,
+          display_name: owner.username,
+          avatar: null,
+          team_name: owner.team
+        },
+        players: otherPlayersRes,
+        starters: otherPlayersRes.slice(0, 3),
+        bench: otherPlayersRes.slice(3),
+        pointsThisWeek: 112.5,
+        matchupId: rosterId === 2 ? 1 : null,
+        startersIdsWithPoints: {}
+      });
+    });
+
+    standings.sort((a, b) => {
+      if (b.settings.wins !== a.settings.wins) {
+        return b.settings.wins - a.settings.wins;
+      }
+      return b.settings.fpts + b.settings.fpts_decimal * 0.01 - (a.settings.fpts + a.settings.fpts_decimal * 0.01);
+    });
+
+    return res.json({
+      leagueId,
+      name: targetInfo.name,
+      status: "in_season",
+      season: "2026",
+      totalRosters: 12,
+      currentWeek: 1,
+      userRoster,
+      standings,
+      matches: [
+        {
+          matchupId: 1,
+          teams: [
+            {
+              roster_id: 1,
+              team_name: "Sleeper Demo Star",
+              username: "SleeperDemo",
+              avatar: null,
+              owner_id: "demo_99999",
+              points: 136.5
+            },
+            {
+              roster_id: 2,
+              team_name: "Megatron's Revenge",
+              username: "Megatron9",
+              avatar: null,
+              owner_id: "demo_owner_2",
+              points: 121.2
+            }
+          ]
+        }
+      ],
+      rosterPositions: ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "BN", "BN", "BN", "BN"]
+    });
+  }
 
   try {
     // 1. Fetch primary assets in parallel using in-memory cache
@@ -418,6 +597,63 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
 // API: Global Lifetime Statistics Rollup across all historical and active leagues
 app.get("/api/sleeper/user/:userId/lifetime-rollup", async (req, res) => {
   const { userId } = req.params;
+  
+  if (userId === "demo_99999") {
+    return res.json({
+      "lifetimeWins": 48,
+      "lifetimeLosses": 22,
+      "lifetimeTies": 0,
+      "lifetimePoints": 9520.45,
+      "seasons": [
+        {
+          "leagueId": "demo_league_1",
+          "name": "Apex Dynasty Pro 2026",
+          "season": "2026",
+          "wins": 9,
+          "losses": 5,
+          "ties": 0,
+          "fpts": 1980.25
+        },
+        {
+          "leagueId": "demo_league_2",
+          "name": "Superflex Empire Dynasty",
+          "season": "2026",
+          "wins": 11,
+          "losses": 3,
+          "ties": 0,
+          "fpts": 2150.50
+        },
+        {
+          "leagueId": "demo_league_3",
+          "name": "Gridiron Overlords Dynasty",
+          "season": "2026",
+          "wins": 8,
+          "losses": 6,
+          "ties": 0,
+          "fpts": 1820.10
+        },
+        {
+          "leagueId": "demo_league_1_2025",
+          "name": "Apex Dynasty Pro 2025",
+          "season": "2025",
+          "wins": 10,
+          "losses": 4,
+          "ties": 0,
+          "fpts": 1890.35
+        },
+        {
+          "leagueId": "demo_league_2_2025",
+          "name": "Superflex Empire Dynasty 2025",
+          "season": "2025",
+          "wins": 10,
+          "losses": 4,
+          "ties": 0,
+          "fpts": 1679.25
+        }
+      ]
+    });
+  }
+
   try {
     const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
     const allLeaguesMap = new Map<string, any>();
@@ -847,6 +1083,76 @@ app.get("/api/sleeper/league/:leagueId/transactions", async (req, res) => {
 // API: Retrieve user's 10 most recent trades across all leagues
 app.get("/api/sleeper/user/:userId/recent-trades", async (req, res) => {
   const { userId } = req.params;
+  
+  if (userId === "demo_99999") {
+    return res.json({
+      trades: [
+        {
+          "transaction_id": "demo_trade_1",
+          "leagueName": "Apex Dynasty Pro 2026",
+          "leagueId": "demo_league_1",
+          "season": "2026",
+          "type": "trade",
+          "status": "complete",
+          "created": Date.now() - 3 * 24 * 60 * 60 * 1000,
+          "status_updated": Date.now() - 3 * 24 * 60 * 60 * 1000,
+          "week": 1,
+          "roster_ids": [1, 2],
+          "richAdds": [
+            {
+              "player": resolvePlayer("8183"),
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            }
+          ],
+          "richDrops": [
+            {
+              "player": resolvePlayer("4046"),
+              "rosterId": 2,
+              "ownerName": "Megatron9",
+              "teamName": "Megatron's Revenge",
+              "userId": "demo_owner_2"
+            }
+          ],
+          "richDraftPicks": []
+        },
+        {
+          "transaction_id": "demo_trade_2",
+          "leagueName": "Superflex Empire Dynasty",
+          "leagueId": "demo_league_2",
+          "season": "2026",
+          "type": "trade",
+          "status": "complete",
+          "created": Date.now() - 10 * 24 * 60 * 60 * 1000,
+          "status_updated": Date.now() - 10 * 24 * 60 * 60 * 1000,
+          "week": 1,
+          "roster_ids": [1, 3],
+          "richAdds": [
+            {
+              "player": resolvePlayer("7564"),
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            }
+          ],
+          "richDrops": [
+            {
+              "player": resolvePlayer("4866"),
+              "rosterId": 3,
+              "ownerName": "BradyGoat",
+              "teamName": "Tom's TB12",
+              "userId": "demo_owner_3"
+            }
+          ],
+          "richDraftPicks": []
+        }
+      ]
+    });
+  }
+
   try {
     const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
     const allLeaguesMap = new Map<string, any>();

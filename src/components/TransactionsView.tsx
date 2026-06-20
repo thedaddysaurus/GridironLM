@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, RefreshCw, Plus, Minus, Calendar, DollarSign, Search, Tag, Inbox } from "lucide-react";
+import { ArrowRight, RefreshCw, Plus, Minus, Calendar, DollarSign, Search, Tag, Inbox, TrendingUp, Award } from "lucide-react";
 import { getOwnerTheme } from "../utils/theme";
 import { motion } from "motion/react";
 
@@ -146,6 +146,45 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
     }
   };
 
+  // Compile trade metrics (most traded players and positions) from the complete transactions dataset
+  const tradesOnly = transactions.filter((t) => t.type === "trade");
+  
+  const playerTradeCounts: Record<string, { full_name: string; position: string; team: string | null; count: number }> = {};
+  const positionTradeCounts: Record<string, number> = {};
+
+  tradesOnly.forEach((t) => {
+    t.richAdds.forEach((add) => {
+      const p = add.player;
+      if (!p || !p.id) return;
+      if (!playerTradeCounts[p.id]) {
+        playerTradeCounts[p.id] = {
+          full_name: p.full_name,
+          position: p.position,
+          team: p.team,
+          count: 0
+        };
+      }
+      playerTradeCounts[p.id].count += 1;
+    });
+
+    t.richAdds.forEach((add) => {
+      if (add.player && add.player.position) {
+        const pos = add.player.position;
+        positionTradeCounts[pos] = (positionTradeCounts[pos] || 0) + 1;
+      }
+    });
+  });
+
+  const topTradedPlayers = Object.entries(playerTradeCounts)
+    .map(([id, info]) => ({ id, ...info }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const topTradedPositions = Object.entries(positionTradeCounts)
+    .map(([position, count]) => ({ position, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center" id="tx-loading-spinner">
@@ -167,6 +206,107 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
 
   return (
     <div className="space-y-6" id="transactions-view-root">
+      {/* Top 5 Most Traded Bento Grid */}
+      {mode === "trades" && topTradedPlayers.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="trades-leaderboard-grid">
+          {/* Most Traded Players Card */}
+          <div className="bg-gradient-to-b from-slate-900/80 to-slate-950/80 border border-white/10 rounded-2xl p-5 shadow-xl space-y-4">
+            <h3 className="text-xs font-sans font-bold text-slate-200 tracking-wider uppercase flex items-center gap-2">
+              <TrendingUp className="text-purple-400" size={14} />
+              🔥 Most Traded Players (Season Top 5)
+            </h3>
+            <div className="divide-y divide-white/5 space-y-2.5">
+              {topTradedPlayers.map((tp, idx) => {
+                const getPositionColor = (pos: string) => {
+                  switch (pos) {
+                    case "QB": return "bg-[#ff007f]/20 text-[#ff007f] border-[#ff007f]/30";
+                    case "RB": return "bg-[#00c176]/20 text-[#00c176] border-[#00c176]/30";
+                    case "WR": return "bg-[#56b2e6]/20 text-[#56b2e6] border-[#56b2e6]/30";
+                    case "TE": return "bg-[#f5a623]/20 text-[#f5a623] border-[#f5a623]/30";
+                    default: return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+                  }
+                };
+                return (
+                  <div key={tp.id} className="flex items-center justify-between pt-2.5 first:pt-0">
+                    <div className="flex items-center gap-3">
+                      {/* Rank Number */}
+                      <span className="text-2xs font-mono font-bold text-slate-500 w-4">#{idx+1}</span>
+                      {/* Player Headshot Avatar with standard error handling */}
+                      <div className="w-8 h-8 rounded-full bg-slate-950 border border-white/5 overflow-hidden flex items-center justify-center">
+                        <img 
+                          src={`https://sleepercdn.com/content/nfl/players/thumbs/${tp.id}.jpg`}
+                          alt={tp.full_name}
+                          className="w-full h-full object-cover scale-110 translate-y-0.5"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        <span className="text-[9px] font-bold font-sans text-white/50">
+                          {tp.full_name.split(" ").map(n => n[0]).join("")}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-sans font-bold text-slate-200">{tp.full_name}</p>
+                        <p className="text-4xs text-white/40">{tp.team || "FA"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${getPositionColor(tp.position)}`}>
+                        {tp.position}
+                      </span>
+                      <span className="text-2xs font-mono font-black text-purple-300 bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                        {tp.count}x Traded
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Most Traded Positions Card */}
+          <div className="bg-gradient-to-b from-slate-900/80 to-slate-950/80 border border-white/10 rounded-2xl p-5 shadow-xl space-y-4">
+            <h3 className="text-xs font-sans font-bold text-slate-200 tracking-wider uppercase flex items-center gap-2">
+              <Award className="text-purple-400" size={14} />
+              🎯 Most Traded Positions (Total Volume)
+            </h3>
+            <div className="divide-y divide-white/5 space-y-2.5">
+              {topTradedPositions.map((tp, idx) => {
+                const getPositionColor = (pos: string) => {
+                  switch (pos) {
+                    case "QB": return "bg-[#ff007f] text-white";
+                    case "RB": return "bg-[#00c176] text-white";
+                    case "WR": return "bg-[#56b2e6] text-slate-900 font-bold";
+                    case "TE": return "bg-[#f5a623] text-white";
+                    default: return "bg-purple-600 text-white";
+                  }
+                };
+                return (
+                  <div key={tp.position} className="flex items-center justify-between pt-2.5 first:pt-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xs font-mono font-bold text-slate-500 w-4">#{idx+1}</span>
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-3xs font-extrabold shadow ${getPositionColor(tp.position)}`}>
+                        {tp.position}
+                      </span>
+                      <div>
+                        <p className="text-xs font-sans font-semibold text-slate-200">
+                          {tp.position === "QB" ? "Quarterback" : tp.position === "RB" ? "Running Back" : tp.position === "WR" ? "Wide Receiver" : tp.position === "TE" ? "Tight End" : "Other Position"}s
+                        </p>
+                        <p className="text-3xs text-white/45 font-mono">League roster prioritization velocity</p>
+                      </div>
+                    </div>
+                    <span className="text-2xs font-mono font-black text-purple-300 bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                      {tp.count} Traded
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search & Actions Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white/3 border border-white/5 rounded-2xl p-4">
         <div className="relative flex-1 min-w-[240px]">

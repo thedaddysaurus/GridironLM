@@ -197,19 +197,28 @@ export default function App() {
               placeholder="Sleeper Username..."
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-20 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all font-sans shadow-sm"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-20 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-purple-450 focus:bg-white/10 transition-all font-sans shadow-sm focus:ring-1 focus:ring-purple-400/20"
             />
             <button
               type="submit"
-              className="absolute right-1.5 px-2.5 py-1 text-[10px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 font-sans font-semibold rounded-lg text-white shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95"
+              className="absolute right-1.5 px-2.5 py-1 text-[10px] bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 font-sans font-semibold rounded-lg text-white shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95"
             >
               Search
             </button>
           </form>
 
-          {/* Sync badge info */}
-          <div className="flex items-center gap-2 self-start md:self-auto font-mono text-2xs bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-white/60 shadow-sm">
-            <Globe size={11} className="text-emerald-400 animate-pulse" />
+          {/* Sync badge info with Sleeper avatar integration */}
+          <div className="flex items-center gap-2.5 self-start md:self-auto font-mono text-2xs bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-white/70 shadow-sm">
+            {user?.avatar ? (
+              <img 
+                src={`https://sleepercdn.com/avatars/thumbs/${user.avatar}`} 
+                alt={activeUsername} 
+                className="w-4 h-4 rounded-full object-cover border border-white/20"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <Globe size={11} className="text-emerald-400 animate-pulse" />
+            )}
             <span>Synced: <strong className="text-purple-300">@{activeUsername}</strong></span>
           </div>
         </div>
@@ -273,12 +282,12 @@ export default function App() {
                       placeholder="Your Sleeper Username..."
                       value={usernameInput}
                       onChange={(e) => setUsernameInput(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 shadow-inner"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-450 focus:ring-1 focus:ring-purple-400/25 shadow-inner"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-sm font-semibold rounded-xl text-white shadow-lg transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 text-sm font-semibold rounded-xl text-white shadow-lg transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-2"
                   >
                     <RefreshCw size={14} />
                     Get Started
@@ -356,7 +365,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => loadDynastyHub("VaderFC")}
-                className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 border border-white/10 rounded-xl text-2xs text-white cursor-pointer shadow-md transition-all"
+                className="px-4 py-1.5 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 border border-white/10 rounded-xl text-2xs text-white cursor-pointer shadow-md transition-all"
               >
                 Explore Demo (VaderFC)
               </button>

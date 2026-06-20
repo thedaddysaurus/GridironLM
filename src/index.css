@@ -74,3 +74,26 @@
   --color-gridiron-grey: #666666;
 }
 
+/* Autofill override to prevent default browser blue/yellow background and borders */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #0e0d0c inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-color: rgba(186, 134, 89, 0.3) !important;
+}
+
+/* Eliminate default blue focus ring globally */
+*:focus, *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+

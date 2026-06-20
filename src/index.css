@@ -1,9 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arvo:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Special+Elite&family=Staatliches&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-athletic: "Staatliches", sans-serif;
+  --font-playbook: "Arvo", serif;
+  --font-typewriter: "Special Elite", cursive;
 
   /* Map purple to beautiful golden leather browns */
   --color-purple-50: #faf7f4;
@@ -72,6 +75,13 @@
   /* Custom Gridiron deep brown color classes */
   --color-gridiron-brown: #a27248;
   --color-gridiron-grey: #666666;
+
+  --animate-marquee: marquee 88s linear infinite;
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
 }
 
 /* Autofill override to prevent default browser blue/yellow background and borders */
@@ -94,6 +104,15 @@ select:-webkit-autofill:focus {
 *:focus, *:focus-visible {
   outline: none !important;
   box-shadow: none !important;
+}
+
+.vintage-playbook-grid {
+  background-color: #0c0f0e; /* Matte vintage blackboard/chalkboard */
+  background-image: 
+    radial-gradient(circle at center, rgba(186, 134, 89, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 32px 32px, 64px 64px, 64px 64px;
 }
 
 

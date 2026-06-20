@@ -125,8 +125,8 @@ export default function MatchupsView({ league, userRosterId }: MatchupsViewProps
     <div className="space-y-6" id="matchups-view-container">
       
       {/* Side-by-Side Headline Scoreboard */}
-      <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative overflow-hidden shadow-xl shadow-black/10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-5 pointer-events-none text-purple-500">
+      <div className="bg-[#ba8659]/5 border border-[#ba8659]/15 rounded-2xl p-6 relative overflow-hidden shadow-xl shadow-black/10">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-5 pointer-events-none text-[#ba8659]">
           <Swords size={200} />
         </div>
 
@@ -138,7 +138,7 @@ export default function MatchupsView({ league, userRosterId }: MatchupsViewProps
               {userAvatar ? (
                 <img src={userAvatar} alt="My Team logo" className="w-9 h-9 rounded-full border border-white/15 shadow-md shadow-black/10 animate-fade-in" />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-purple-500/10 text-purple-300 flex items-center justify-center text-xs font-bold border border-purple-500/25">U</div>
+                <div className="w-9 h-9 rounded-full bg-[#ba8659]/10 text-[#ba8659] flex items-center justify-center text-xs font-bold border border-[#ba8659]/25">U</div>
               )}
               <div>
                 <h4 className="text-md font-sans font-bold text-slate-100">{userRoster.ownerDetails.team_name}</h4>
@@ -147,11 +147,11 @@ export default function MatchupsView({ league, userRosterId }: MatchupsViewProps
             </div>
 
             <div className="pt-2">
-              <h2 className={`text-4xl font-mono font-black ${userLead ? 'text-purple-300' : 'text-slate-400'}`}>
+              <h2 className={`text-4xl font-mono font-black ${userLead ? 'text-[#ba8659]' : 'text-slate-400'}`}>
                 {userTotal.toFixed(2)}
               </h2>
               {userLead && (
-                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-mono uppercase bg-purple-500/15 border border-purple-500/25 text-purple-300 font-bold px-2 py-0.5 rounded">
+                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-mono uppercase bg-[#ba8659]/15 border border-[#ba8659]/25 text-[#ba8659] font-bold px-2 py-0.5 rounded">
                   <Trophy size={10} /> Lead
                 </span>
               )}
@@ -181,11 +181,11 @@ export default function MatchupsView({ league, userRosterId }: MatchupsViewProps
             </div>
 
             <div className="pt-2">
-              <h2 className={`text-4xl font-mono font-black ${oppLead ? 'text-purple-300' : 'text-slate-400'}`}>
+              <h2 className={`text-4xl font-mono font-black ${oppLead ? 'text-[#ba8659]' : 'text-slate-400'}`}>
                 {oppTotal.toFixed(2)}
               </h2>
               {oppLead && (
-                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-mono uppercase bg-purple-500/15 border border-purple-500/25 text-purple-300 font-bold px-2 py-0.5 rounded">
+                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-mono uppercase bg-[#ba8659]/15 border border-[#ba8659]/25 text-[#ba8659] font-bold px-2 py-0.5 rounded">
                   <Trophy size={10} /> Lead
                 </span>
               )}
@@ -220,7 +220,7 @@ export default function MatchupsView({ league, userRosterId }: MatchupsViewProps
                   {hasUserP ? (
                     <>
                       <div className="text-right">
-                        <span className={`text-xs font-mono font-bold leading-none ${userMatchLead ? 'text-purple-300' : 'text-slate-400'}`}>
+                        <span className={`text-xs font-mono font-bold leading-none ${userMatchLead ? 'text-[#ba8659]' : 'text-slate-400'}`}>
                           {userPts.toFixed(1)}
                         </span>
                         <p className="text-[10px] text-white/40 block font-mono mt-0.5">{match.userPlayer.team || "FA"}</p>
@@ -249,7 +249,7 @@ export default function MatchupsView({ league, userRosterId }: MatchupsViewProps
                         <p className="text-3xs font-mono uppercase tracking-widest text-white/40 mt-0.5">{match.opponentPlayer.position}</p>
                       </div>
                       <div className="text-left">
-                        <span className={`text-xs font-mono font-bold leading-none ${oppMatchLead ? 'text-purple-300' : 'text-slate-400'}`}>
+                        <span className={`text-xs font-mono font-bold leading-none ${oppMatchLead ? 'text-[#ba8659]' : 'text-slate-400'}`}>
                           {oppPts.toFixed(1)}
                         </span>
                         <p className="text-[10px] text-white/40 block font-mono mt-0.5">{match.opponentPlayer.team || "FA"}</p>

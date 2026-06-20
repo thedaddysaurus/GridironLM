@@ -166,18 +166,56 @@ app.get("/api/sleeper/user/:username", async (req, res) => {
   }
 });
 
+// API: Sleeper NFL Trending Adds and Drops with resolved player details
+app.get("/api/sleeper/trending", async (req, res) => {
+  const lookback_hours = parseInt(req.query.lookback_hours as string) || 24;
+  const limit = parseInt(req.query.limit as string) || 20;
+  
+  try {
+    const addUrl = `https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=${lookback_hours}&limit=${limit}`;
+    const dropUrl = `https://api.sleeper.app/v1/players/nfl/trending/drop?lookback_hours=${lookback_hours}&limit=${limit}`;
+    
+    // Fetch both adds and drops in parallel
+    const [addsRaw, dropsRaw] = await Promise.all([
+      fetchWithCache(addUrl, 10 * 60 * 1000), // Cache for 10 minutes
+      fetchWithCache(dropUrl, 10 * 60 * 1000)
+    ]);
+    
+    const adds = (addsRaw || []).map((item: any) => {
+      const resolved = resolvePlayer(item.player_id);
+      return {
+        ...item,
+        player: resolved
+      };
+    });
+
+    const drops = (dropsRaw || []).map((item: any) => {
+      const resolved = resolvePlayer(item.player_id);
+      return {
+        ...item,
+        player: resolved
+      };
+    });
+
+    res.json({ adds, drops });
+  } catch (error: any) {
+    console.error("Error fetching trending data:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch trending players" });
+  }
+});
+
 // API: Fetch user leagues across 2025 and 2026 seasons to ensure completeness
 app.get("/api/sleeper/leagues/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
-    // We poll both 2025 and 2026 to catch both seasons' dynasty settings
-    const seasons = ["2025", "2026"];
+    // We poll seasons from 2020 to 2026 to catch both active and historical dynasty settings
+    const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
     const allLeaguesMap = new Map<string, any>();
 
     const fetchPromises = seasons.map(async (season) => {
       try {
         const url = `https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${season}`;
-        const ttl = season === "2026" ? 5 * 60 * 1000 : 24 * 60 * 60 * 1000; // past is cached 24 hours
+        const ttl = (season === "2026" || season === "2025") ? 5 * 60 * 1000 : 24 * 60 * 60 * 1000; // past is cached 24 hours
         const leagues = await fetchWithCache(url, ttl);
         if (Array.isArray(leagues)) {
           leagues.forEach((l) => {
@@ -192,18 +230,26 @@ app.get("/api/sleeper/leagues/:userId", async (req, res) => {
     await Promise.all(fetchPromises);
     const combinedLeagues = Array.from(allLeaguesMap.values());
 
+    // Filter to Dynasty leagues of active seasons (2025 and 2026) that are not complete
+    const activeDynastyLeagues = combinedLeagues.filter((l) => {
+      const isDynasty = l.settings?.type === 2 || String(l.settings?.type) === "2";
+      const isCurrent = parseInt(l.season || "0", 10) >= 2025;
+      const isNotComplete = l.status !== "complete" && l.status !== "closed";
+      return isDynasty && isCurrent && isNotComplete;
+    });
+
     // Deduplicate rolled-over leagues (prevent "doubled up" leagues by season rollover)
     const previousIds = new Set<string>();
-    combinedLeagues.forEach((l) => {
+    activeDynastyLeagues.forEach((l) => {
       if (l.previous_league_id && l.previous_league_id !== "0") {
         previousIds.add(l.previous_league_id);
       }
     });
 
     // Keep only leagues that are NOT marked as a prior season ID of another loaded league
-    const activeLeaguesOnly = combinedLeagues.filter((l) => !previousIds.has(l.league_id));
+    const currentActiveLeaguesOnly = activeDynastyLeagues.filter((l) => !previousIds.has(l.league_id));
 
-    res.json(activeLeaguesOnly);
+    res.json(currentActiveLeaguesOnly);
   } catch (error: any) {
     console.error("Error fetching combined leagues:", error);
     res.status(500).json({ error: error.message || "Failed to fetch leagues" });
@@ -373,7 +419,7 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
 app.get("/api/sleeper/user/:userId/lifetime-rollup", async (req, res) => {
   const { userId } = req.params;
   try {
-    const seasons = ["2021", "2022", "2023", "2024", "2025", "2026"];
+    const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
     const allLeaguesMap = new Map<string, any>();
 
     // Fetch initial active leagues using cache
@@ -516,9 +562,9 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
     const seasonsList: any[] = [];
     let currentId: string | null = leagueId;
     
-    // Support climbing up to 3 seasons deep for history
+    // Support climbing up to 15 seasons deep for history to ensure we go back to 2022 and prior
     let depth = 0;
-    const maxDepth = 3;
+    const maxDepth = 15;
     
     // Roster aggregation for career / all-time stats
     const allTimeStats: Record<string, {
@@ -536,21 +582,20 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
     while (currentId && depth < maxDepth) {
       try {
         const leagueUrl = `https://api.sleeper.app/v1/league/${currentId}`;
-        const lRes = await fetch(leagueUrl);
-        if (!lRes.ok) break;
-        const leagueData = await lRes.json();
+        const leagueData = await fetchWithCache(leagueUrl, 24 * 60 * 60 * 1000);
+        if (!leagueData || !leagueData.season) break;
         
+        const isCurrentSeason = leagueData.season === "2026" || leagueData.season === "2025";
+        const rostersTtl = isCurrentSeason ? 5 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        const usersTtl = isCurrentSeason ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
         const rostersUrl = `https://api.sleeper.app/v1/league/${currentId}/rosters`;
         const usersUrl = `https://api.sleeper.app/v1/league/${currentId}/users`;
         
-        const [rRes, uRes] = await Promise.all([
-          fetch(rostersUrl),
-          fetch(usersUrl)
+        const [rosters, users] = await Promise.all([
+          fetchWithCache(rostersUrl, rostersTtl).catch(() => []),
+          fetchWithCache(usersUrl, usersTtl).catch(() => [])
         ]);
-        
-        if (!rRes.ok || !uRes.ok) break;
-        const rosters = await rRes.json();
-        const users = await uRes.json();
         
         const usersMap: Record<string, any> = {};
         if (Array.isArray(users)) {
@@ -796,6 +841,165 @@ app.get("/api/sleeper/league/:leagueId/transactions", async (req, res) => {
   } catch (error: any) {
     console.error("Error loading transactions:", error);
     res.status(500).json({ error: error.message || "Failed loading transactions data." });
+  }
+});
+
+// API: Retrieve user's 10 most recent trades across all leagues
+app.get("/api/sleeper/user/:userId/recent-trades", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
+    const allLeaguesMap = new Map<string, any>();
+
+    // Obtain leagues (cached)
+    await Promise.all(seasons.map(async (season) => {
+      try {
+        const url = `https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${season}`;
+        const ttl = (season === "2026" || season === "2025") ? 5 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        const leagues = await fetchWithCache(url, ttl);
+        if (Array.isArray(leagues)) {
+          leagues.forEach((l) => allLeaguesMap.set(l.league_id, l));
+        }
+      } catch (err) {
+        console.error(`Recent trades leagues fetch: Failed for season ${season}:`, err);
+      }
+    }));
+
+    const leagues = Array.from(allLeaguesMap.values());
+    const allUserTrades: any[] = [];
+
+    await Promise.all(leagues.map(async (league) => {
+      const leagueId = league.league_id;
+      try {
+        const rostersUrl = `https://api.sleeper.app/v1/league/${leagueId}/rosters`;
+        const usersUrl = `https://api.sleeper.app/v1/league/${leagueId}/users`;
+
+        const [rostersData, usersData] = await Promise.all([
+          fetchWithCache(rostersUrl, 5 * 60 * 1000).catch(() => []),
+          fetchWithCache(usersUrl, 15 * 60 * 1000).catch(() => [])
+        ]);
+
+        const usersMap: Record<string, any> = {};
+        if (Array.isArray(usersData)) {
+          usersData.forEach((u) => {
+            usersMap[u.user_id] = u;
+          });
+        }
+
+        const rosterIdToOwner: Record<string, { display_name: string; team_name: string; avatar: string | null; user_id: string }> = {};
+        let userRosterId: number | null = null;
+
+        if (Array.isArray(rostersData)) {
+          rostersData.forEach((r) => {
+            const ownerId = r.owner_id;
+            const u = usersMap[ownerId] || {};
+            const displayName = u.display_name || u.username || `Owner ${ownerId || r.roster_id}`;
+            let teamName = displayName;
+            if (u.metadata && u.metadata.team_name) {
+              teamName = u.metadata.team_name;
+            }
+            rosterIdToOwner[String(r.roster_id)] = {
+              display_name: displayName,
+              team_name: teamName,
+              avatar: u.avatar || null,
+              user_id: ownerId
+            };
+            if (String(ownerId).trim() === String(userId).trim() || (Array.isArray(r.co_owners) && r.co_owners.map((co: any) => String(co).trim()).includes(String(userId).trim()))) {
+              userRosterId = r.roster_id;
+            }
+          });
+        }
+
+        if (userRosterId === null) return;
+
+        // Fetch weeks in parallel
+        const promises = Array.from({ length: 18 }, (_, i) => {
+          const week = i + 1;
+          const url = `https://api.sleeper.app/v1/league/${leagueId}/transactions/${week}`;
+          return fetchWithCache(url, 10 * 60 * 1000).catch(() => []);
+        });
+
+        const results = await Promise.all(promises);
+        const allRawTransactions = results.flat();
+
+        const seenIds = new Set<string>();
+
+        allRawTransactions.forEach((t: any) => {
+          if (!t || !t.transaction_id || t.type !== "trade" || seenIds.has(t.transaction_id)) return;
+          seenIds.add(t.transaction_id);
+
+          const isUserParty = Array.isArray(t.roster_ids) && t.roster_ids.includes(userRosterId);
+          if (!isUserParty) return;
+
+          const richAdds = Object.entries(t.adds || {}).map(([pid, rid]) => {
+            const rIdStr = String(rid);
+            const owner = rosterIdToOwner[rIdStr] || { display_name: `Roster ${rid}`, team_name: `Roster ${rid}`, user_id: "" };
+            return {
+              player: resolvePlayer(pid),
+              rosterId: rid,
+              ownerName: owner.display_name,
+              teamName: owner.team_name,
+              userId: owner.user_id
+            };
+          });
+
+          const richDrops = Object.entries(t.drops || {}).map(([pid, rid]) => {
+            const rIdStr = String(rid);
+            const owner = rosterIdToOwner[rIdStr] || { display_name: `Roster ${rid}`, team_name: `Roster ${rid}`, user_id: "" };
+            return {
+              player: resolvePlayer(pid),
+              rosterId: rid,
+              ownerName: owner.display_name,
+              teamName: owner.team_name,
+              userId: owner.user_id
+            };
+          });
+
+          const richDraftPicks = (t.draft_picks || []).map((pick: any) => {
+            const receiver = rosterIdToOwner[String(pick.roster_id)] || { display_name: `Roster ${pick.roster_id}`, team_name: `Roster ${pick.roster_id}` };
+            const sender = rosterIdToOwner[String(pick.previous_roster_id)] || { display_name: `Roster ${pick.previous_roster_id}`, team_name: `Roster ${pick.previous_roster_id}` };
+            const originalOwner = rosterIdToOwner[String(pick.owner_id)] || { display_name: `Roster ${pick.owner_id}`, team_name: `Roster ${pick.owner_id}` };
+            return {
+              season: pick.season,
+              round: pick.round,
+              receiverRosterId: pick.roster_id,
+              receiverName: receiver.display_name,
+              receiverTeam: receiver.team_name,
+              senderRosterId: pick.previous_roster_id,
+              senderName: sender.display_name,
+              senderTeam: sender.team_name,
+              originalOwnerRosterId: pick.owner_id,
+              originalOwnerName: originalOwner.display_name,
+              originalOwnerTeam: originalOwner.team_name
+            };
+          });
+
+          allUserTrades.push({
+            transaction_id: t.transaction_id,
+            leagueName: league.name,
+            leagueId: league.league_id,
+            season: league.season,
+            type: t.type,
+            status: t.status,
+            created: t.created || t.status_updated,
+            status_updated: t.status_updated,
+            week: t.leg,
+            roster_ids: t.roster_ids,
+            richAdds,
+            richDrops,
+            richDraftPicks
+          });
+        });
+      } catch (err) {
+        console.error(`Recent trades: Failed transactions fetch for league ${leagueId}:`, err);
+      }
+    }));
+
+    allUserTrades.sort((a, b) => b.created - a.created);
+    res.json({ trades: allUserTrades.slice(0, 10) });
+  } catch (error: any) {
+    console.error("Error loading combined recent trades:", error);
+    res.status(500).json({ error: error.message || "Failed loading recent trades." });
   }
 });
 

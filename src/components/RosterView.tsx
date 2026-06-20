@@ -135,11 +135,11 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
       case "RB":
         return "bg-[#00c176] text-white font-extrabold text-[10px] uppercase font-mono shadow-sm border border-emerald-500/20";
       case "WR":
-        return "bg-[#56b2e6] text-slate-900 font-black text-[10px] uppercase font-mono shadow-sm border border-blue-400/20";
+        return "bg-[#e2b13c] text-slate-900 font-black text-[10px] uppercase font-mono shadow-sm border border-[#e2b13c]/20";
       case "TE":
         return "bg-[#f5a623] text-white font-extrabold text-[10px] uppercase font-mono shadow-sm border border-amber-500/20";
       default:
-        return "bg-purple-600 text-white font-extrabold text-[10px] uppercase font-mono shadow-sm border border-purple-500/20";
+        return "bg-[#ba8659] text-white font-extrabold text-[10px] uppercase font-mono shadow-sm border border-[#ba8659]/30";
     }
   };
 
@@ -153,7 +153,7 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
       let bgGrad = "from-slate-800 to-slate-900 text-slate-400";
       if (player.position === "QB") bgGrad = "from-[#ff007f]/20 to-[#ff007f]/40 text-rose-200 border-[#ff007f]/30";
       else if (player.position === "RB") bgGrad = "from-[#00c176]/20 to-[#00c176]/40 text-emerald-200 border-[#00c176]/30";
-      else if (player.position === "WR") bgGrad = "from-[#56b2e6]/20 to-[#56b2e6]/40 text-blue-200 border-[#56b2e6]/30";
+      else if (player.position === "WR") bgGrad = "from-[#e2b13c]/20 to-[#e2b13c]/40 text-amber-200 border-[#e2b13c]/30";
       else if (player.position === "TE") bgGrad = "from-[#f5a623]/20 to-[#f5a623]/40 text-amber-200 border-[#f5a623]/30";
 
       return (
@@ -235,7 +235,7 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
         <div className="space-y-4" id="starters-lineup">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-sans font-semibold text-white/80 flex items-center gap-2">
-              <Zap className="text-purple-400" size={18} />
+              <Zap className="text-[#ba8659]" size={18} />
               Starting Roster Lineup
             </h2>
             <span className="text-2xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40">
@@ -300,7 +300,7 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
         <div className="space-y-4" id="bench-lineup">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <h2 className="text-lg font-sans font-semibold text-white/80 flex items-center gap-2">
-              <Hourglass className="text-purple-400" size={18} />
+              <Hourglass className="text-[#ba8659]" size={18} />
               Bench & Depth Chart
             </h2>
             

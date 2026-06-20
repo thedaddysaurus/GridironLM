@@ -142,7 +142,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
       case "TE":
         return "bg-[#f5a623] text-white font-mono text-[9px] font-black px-1.5 py-0.5 rounded";
       default:
-        return "bg-purple-600 text-white font-mono text-[9px] font-black px-1.5 py-0.5 rounded";
+        return "bg-[#ba8659] text-white font-mono text-[9px] font-black px-1.5 py-0.5 rounded";
     }
   };
 
@@ -178,17 +178,17 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
   const topTradedPlayers = Object.entries(playerTradeCounts)
     .map(([id, info]) => ({ id, ...info }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    .slice(0, 10);
 
   const topTradedPositions = Object.entries(positionTradeCounts)
     .map(([position, count]) => ({ position, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    .slice(0, 10);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center" id="tx-loading-spinner">
-        <RefreshCw className="text-purple-400 animate-spin mb-3" size={28} />
+        <RefreshCw className="text-[#ba8659] animate-spin mb-3" size={28} />
         <p className="text-xs text-slate-400 font-sans">
           Downloading and indexing {mode === "trades" ? "league trades ledger" : "waiver and transactions history"}...
         </p>
@@ -206,14 +206,14 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
 
   return (
     <div className="space-y-6" id="transactions-view-root">
-      {/* Top 5 Most Traded Bento Grid */}
+      {/* Top 10 Most Traded Bento Grid */}
       {mode === "trades" && topTradedPlayers.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="trades-leaderboard-grid">
           {/* Most Traded Players Card */}
-          <div className="bg-gradient-to-b from-slate-900/80 to-slate-950/80 border border-white/10 rounded-2xl p-5 shadow-xl space-y-4">
-            <h3 className="text-xs font-sans font-bold text-slate-200 tracking-wider uppercase flex items-center gap-2">
-              <TrendingUp className="text-purple-400" size={14} />
-              🔥 Most Traded Players (Season Top 5)
+          <div className="bg-gradient-to-b from-neutral-900/90 to-[#0c0f0e]/95 border border-[#ba8659]/15 rounded-2xl p-5 shadow-xl space-y-4">
+            <h3 className="text-xs font-sans font-bold text-stone-200 tracking-wider uppercase flex items-center gap-2">
+              <TrendingUp className="text-[#ba8659]" size={14} />
+              🔥 Most Traded Players (Season Top 10)
             </h3>
             <div className="divide-y divide-white/5 space-y-2.5">
               {topTradedPlayers.map((tp, idx) => {
@@ -221,18 +221,18 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                   switch (pos) {
                     case "QB": return "bg-[#ff007f]/20 text-[#ff007f] border-[#ff007f]/30";
                     case "RB": return "bg-[#00c176]/20 text-[#00c176] border-[#00c176]/30";
-                    case "WR": return "bg-[#56b2e6]/20 text-[#56b2e6] border-[#56b2e6]/30";
+                    case "WR": return "bg-[#e2b13c]/20 text-[#e2b13c] border-[#e2b13c]/30";
                     case "TE": return "bg-[#f5a623]/20 text-[#f5a623] border-[#f5a623]/30";
-                    default: return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+                    default: return "bg-[#ba8659]/20 text-[#ba8659] border-[#ba8659]/30";
                   }
                 };
                 return (
                   <div key={tp.id} className="flex items-center justify-between pt-2.5 first:pt-0">
                     <div className="flex items-center gap-3">
                       {/* Rank Number */}
-                      <span className="text-2xs font-mono font-bold text-slate-500 w-4">#{idx+1}</span>
+                      <span className="text-2xs font-mono font-bold text-stone-500 w-4">#{idx+1}</span>
                       {/* Player Headshot Avatar with standard error handling */}
-                      <div className="w-8 h-8 rounded-full bg-slate-950 border border-white/5 overflow-hidden flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-stone-950 border border-white/5 overflow-hidden flex items-center justify-center">
                         <img 
                           src={`https://sleepercdn.com/content/nfl/players/thumbs/${tp.id}.jpg`}
                           alt={tp.full_name}
@@ -247,7 +247,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                         </span>
                       </div>
                       <div>
-                        <p className="text-xs font-sans font-bold text-slate-200">{tp.full_name}</p>
+                        <p className="text-xs font-sans font-bold text-stone-200">{tp.full_name}</p>
                         <p className="text-4xs text-white/40">{tp.team || "FA"}</p>
                       </div>
                     </div>
@@ -255,7 +255,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                       <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${getPositionColor(tp.position)}`}>
                         {tp.position}
                       </span>
-                      <span className="text-2xs font-mono font-black text-purple-300 bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                      <span className="text-2xs font-mono font-black text-[#ba8659] bg-[#ba8659]/5 px-2 py-1 rounded-lg border border-[#ba8659]/25">
                         {tp.count}x Traded
                       </span>
                     </div>
@@ -266,9 +266,9 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
           </div>
 
           {/* Most Traded Positions Card */}
-          <div className="bg-gradient-to-b from-slate-900/80 to-slate-950/80 border border-white/10 rounded-2xl p-5 shadow-xl space-y-4">
-            <h3 className="text-xs font-sans font-bold text-slate-200 tracking-wider uppercase flex items-center gap-2">
-              <Award className="text-purple-400" size={14} />
+          <div className="bg-gradient-to-b from-neutral-900/90 to-[#0c0f0e]/95 border border-[#ba8659]/15 rounded-2xl p-5 shadow-xl space-y-4">
+            <h3 className="text-xs font-sans font-bold text-stone-200 tracking-wider uppercase flex items-center gap-2">
+              <Award className="text-[#ba8659]" size={14} />
               🎯 Most Traded Positions (Total Volume)
             </h3>
             <div className="divide-y divide-white/5 space-y-2.5">
@@ -277,26 +277,26 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                   switch (pos) {
                     case "QB": return "bg-[#ff007f] text-white";
                     case "RB": return "bg-[#00c176] text-white";
-                    case "WR": return "bg-[#56b2e6] text-slate-900 font-bold";
+                    case "WR": return "bg-[#e2b13c] text-stone-950 font-bold";
                     case "TE": return "bg-[#f5a623] text-white";
-                    default: return "bg-purple-600 text-white";
+                    default: return "bg-[#ba8659] text-white";
                   }
                 };
                 return (
                   <div key={tp.position} className="flex items-center justify-between pt-2.5 first:pt-0">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xs font-mono font-bold text-slate-500 w-4">#{idx+1}</span>
+                      <span className="text-2xs font-mono font-bold text-stone-500 w-4">#{idx+1}</span>
                       <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-3xs font-extrabold shadow ${getPositionColor(tp.position)}`}>
                         {tp.position}
                       </span>
                       <div>
-                        <p className="text-xs font-sans font-semibold text-slate-200">
+                        <p className="text-xs font-sans font-semibold text-stone-200">
                           {tp.position === "QB" ? "Quarterback" : tp.position === "RB" ? "Running Back" : tp.position === "WR" ? "Wide Receiver" : tp.position === "TE" ? "Tight End" : "Other Position"}s
                         </p>
-                        <p className="text-3xs text-white/45 font-mono">League roster prioritization velocity</p>
+                        <p className="text-3xs text-[#ba8659]/80 font-sans font-medium">Share of total league trade volume</p>
                       </div>
                     </div>
-                    <span className="text-2xs font-mono font-black text-purple-300 bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                    <span className="text-2xs font-mono font-black text-[#ba8659] bg-[#ba8659]/5 px-2 py-1 rounded-lg border border-[#ba8659]/20">
                       {tp.count} Traded
                     </span>
                   </div>
@@ -316,7 +316,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by player or manager..."
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs font-sans text-slate-200 placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs font-sans text-slate-200 placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#ba8659]/40 focus:border-[#ba8659]"
           />
         </div>
 
@@ -331,7 +331,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                   onClick={() => setTypeFilter(t)}
                   className={`px-3 py-1.5 text-3xs font-sans font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer whitespace-nowrap ${
                     isSelected
-                      ? "bg-purple-500/20 border-purple-500/40 text-purple-200"
+                      ? "bg-[#ba8659]/20 border-[#ba8659]/40 text-[#ba8659]"
                       : "bg-white/5 border-white/5 text-white/55 hover:text-white"
                   }`}
                 >
@@ -477,7 +477,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                               {data.picks.map((pick, pIdx) => (
                                 <div
                                   key={pIdx}
-                                  className="flex items-center justify-between p-2 bg-purple-500/5 rounded-lg border border-purple-500/10"
+                                  className="flex items-center justify-between p-2 bg-[#ba8659]/5 rounded-lg border border-[#ba8659]/15"
                                 >
                                   <div>
                                     <span className="text-xs font-sans font-bold text-slate-200">
@@ -487,7 +487,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
                                       Original: {pick.originalOwnerTeam}
                                     </span>
                                   </div>
-                                  <span className="bg-purple-950/40 text-purple-300 font-mono text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-purple-500/25">
+                                  <span className="bg-[#ba8659]/20 text-[#ba8659] font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border border-[#ba8659]/30">
                                     PICK
                                   </span>
                                 </div>
@@ -507,7 +507,7 @@ export default function TransactionsView({ leagueId, userRosterId, mode }: Trans
             const typeLabel = t.type === "waiver" ? "Waiver Claim" : t.type === "free_agent" ? "Free Agent Sign" : t.type.toUpperCase();
             const typeBadgeStyle = isWaiver
               ? "bg-emerald-500/15 text-emerald-300 border shadow-sm border-emerald-500/35"
-              : "bg-blue-500/15 text-blue-300 border shadow-sm border-blue-500/35";
+              : "bg-amber-500/15 text-amber-300 border shadow-sm border-amber-500/35";
 
             // Identify the primary owner (typically waivers/FA adds only impact one primary roster)
             const mainOwnerName = t.richAdds[0]?.ownerName || t.richDrops[0]?.ownerName || `Roster ${t.roster_ids[0]}`;

@@ -14,7 +14,7 @@ export default function StandingsView({ standings, userRosterId }: StandingsView
     <div className="space-y-6" id="standings-view-container">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-sans font-semibold text-white/80 flex items-center gap-2">
-          <Trophy className="text-purple-400 animate-pulse" size={18} />
+          <Trophy className="text-[#ba8659] animate-pulse" size={18} />
           League Standings Board
         </h2>
         <span className="text-2xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40">
@@ -59,7 +59,7 @@ export default function StandingsView({ standings, userRosterId }: StandingsView
                     key={roster.roster_id}
                     className={`transition-all duration-200 ${
                       isUser
-                        ? "bg-purple-500/10 hover:bg-purple-500/15 border-l-4 border-l-purple-500 font-semibold"
+                        ? "bg-[#ba8659]/10 hover:bg-[#ba8659]/15 border-l-4 border-l-[#ba8659] font-semibold text-slate-100"
                         : "hover:bg-white/5 text-white/80"
                     }`}
                   >
@@ -67,15 +67,15 @@ export default function StandingsView({ standings, userRosterId }: StandingsView
                     <td className="py-4 px-5 text-center font-mono font-bold">
                       <div className="flex items-center justify-center">
                         {index === 0 ? (
-                           <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center border border-purple-500/35 shadow-sm shadow-purple-500/5">
+                           <div className="w-6 h-6 rounded-md bg-[#ba8659]/20 text-[#ba8659] flex items-center justify-center border border-[#ba8659]/40 shadow-sm">
                             1
                           </div>
                         ) : index === 1 ? (
-                          <div className="w-6 h-6 rounded-full bg-slate-100/15 text-slate-200 flex items-center justify-center border border-white/10 shadow-sm">
+                          <div className="w-6 h-6 rounded-md bg-slate-100/15 text-slate-200 flex items-center justify-center border border-white/10 shadow-sm">
                             2
                           </div>
                         ) : index === 2 ? (
-                          <div className="w-6 h-6 rounded-full bg-orange-700/15 text-orange-300 flex items-center justify-center border border-orange-700/25 shadow-sm">
+                          <div className="w-6 h-6 rounded-md bg-orange-700/15 text-orange-300 flex items-center justify-center border border-orange-700/25 shadow-sm">
                             3
                           </div>
                         ) : (
@@ -101,11 +101,11 @@ export default function StandingsView({ standings, userRosterId }: StandingsView
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-sm font-semibold ${isUser ? "text-purple-300 font-extrabold" : ownerTheme.text}`}>
+                            <span className={`text-sm font-semibold font-playbook ${isUser ? "text-[#ba8659] font-bold" : ownerTheme.text}`}>
                               {owner.team_name}
                             </span>
                             {isUser && (
-                              <span className="text-[9px] font-mono font-black bg-purple-500/15 text-purple-300 border border-purple-500/25 px-1.5 py-0.5 rounded uppercase">
+                              <span className="text-[9px] font-typewriter font-semibold bg-[#ba8659]/15 text-[#ba8659] border border-[#ba8659]/25 px-1.5 py-0.5 rounded-md uppercase">
                                 My Team
                               </span>
                             )}
@@ -128,7 +128,7 @@ export default function StandingsView({ standings, userRosterId }: StandingsView
                     </td>
 
                     {/* Points For */}
-                    <td className={`py-4 px-4 text-right font-mono font-semibold ${isUser ? 'text-purple-300' : 'text-slate-200'}`}>
+                    <td className={`py-4 px-4 text-right font-mono font-bold ${isUser ? 'text-[#ba8659]' : 'text-slate-200'}`}>
                       {fpts.toFixed(2)}
                     </td>
 

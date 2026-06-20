@@ -7,6 +7,7 @@ import MatchupsView from "./components/MatchupsView";
 import HistoryView from "./components/HistoryView";
 import TransactionsView from "./components/TransactionsView";
 import GridironLogo from "./components/GridironLogo";
+import TrendingTicker from "./components/TrendingTicker";
 import { 
   Terminal, 
   Search, 
@@ -20,7 +21,9 @@ import {
   RefreshCw,
   Zap,
   Globe,
-  History
+  History,
+  ChevronDown,
+  Calendar
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -44,6 +47,7 @@ export default function App() {
   
   // Sub-tabs for specific league homepages: "roster" | "matchup" | "standings" | "ai" | "history" | "trades" | "transactions"
   const [activeSubTab, setActiveSubTab] = useState<"roster" | "matchup" | "standings" | "ai" | "history" | "trades" | "transactions">("roster");
+  const [subTabDropdownOpen, setSubTabDropdownOpen] = useState(false);
 
   // 1. Check Sleeper players caching status from server
   async function checkCacheStatus() {
@@ -122,7 +126,9 @@ export default function App() {
       });
 
       const detailsList = await Promise.all(detailPromises);
-      const activeDetails = detailsList.filter((d): d is LeagueDetails => d !== null);
+      const activeDetails = detailsList.filter((d): d is LeagueDetails => {
+        return d !== null && d.status !== "complete" && d.status !== "closed";
+      });
 
       setLeagues(activeDetails);
 
@@ -153,37 +159,37 @@ export default function App() {
   const currentSelectedLeague = leagues.find((l) => l.leagueId === activeTab);
 
   return (
-    <div className="min-h-screen bg-[#0e0d0c] text-slate-100 flex flex-col relative overflow-hidden selection:bg-purple-500/20 selection:text-purple-200">
+    <div className="min-h-screen vintage-playbook-grid text-slate-100 flex flex-col relative overflow-hidden selection:bg-[#ba8659]/30 selection:text-amber-100">
       
-      {/* Mesh Background Layer */}
-      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900 rounded-full blur-[130px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-950 rounded-full blur-[160px]"></div>
-        <div className="absolute top-[30%] right-[10%] w-[40%] h-[40%] bg-blue-950 rounded-full blur-[140px]"></div>
+      {/* Playbook Tactile Ambient Light Layer */}
+      <div className="fixed inset-0 z-0 opacity-20 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#ba8659]/40 rounded-full blur-[130px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#a27248]/30 rounded-full blur-[160px]"></div>
+        <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-slate-800/60 rounded-full blur-[140px]"></div>
       </div>
 
       {/* Upper Players cache header banner */}
       {!cacheStatus.loaded && (
-        <div className="bg-white/5 backdrop-blur-md border-b border-white/10 px-4 py-2 flex items-center justify-between text-xs text-slate-300 font-mono relative z-10">
+        <div className="bg-[#0c0f0e]/90 backdrop-blur-md border-b border-white/5 px-4 py-2 flex items-center justify-between text-xs text-slate-300 font-mono relative z-10">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
-            <span>Sleeper NFL Players database is compiling on server startup... ({cacheStatus.playerCount} players indexed)</span>
+            <span className="w-2 h-2 rounded-full bg-[#ba8659] animate-pulse"></span>
+            <span className="font-typewriter text-[11px] text-slate-300">SYSTEM: Indexing active Sleeper NFL depth charts... ({cacheStatus.playerCount} parsed)</span>
           </div>
-          <span className="text-slate-400">Standings lists are active; roster details are updating</span>
+          <span className="text-[10px] font-mono text-white/40 tracking-wider">ROSTERS ONLINE • COMPILING CHANNELS</span>
         </div>
       )}
 
       {/* Global Application Header */}
-      <header className="border-b border-white/10 bg-white/5 backdrop-blur-xl sticky top-0 z-55 px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 relative">
+      <header className="border-b border-white/5 bg-[#0a0d0c]/85 backdrop-blur-xl sticky top-0 z-55 px-4 md:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 relative">
         
         {/* Brand / Logo */}
-        <div className="flex items-center gap-3 cursor-pointer select-none relative z-10" onClick={() => setActiveTab("overview")}>
-          <GridironLogo size={38} animate={true} />
+        <div className="flex items-center gap-3.5 cursor-pointer select-none relative z-10" onClick={() => setActiveTab("overview")}>
+          <GridironLogo size={36} animate={true} />
           <div>
-            <h1 className="text-md font-sans font-black tracking-widest text-slate-100 uppercase">
-              GRIDIRON<span className="text-purple-400">LM</span>
+            <h1 className="text-xl font-athletic tracking-widest text-[#fcf9f5] uppercase flex items-center gap-1.5">
+              GRIDIRON<span className="text-[#ba8659]" style={{ textShadow: "0 0 10px rgba(186,134,89,0.2)" }}>LM</span>
             </h1>
-            <p className="text-[10px] text-white/50 font-sans tracking-wide">Your intelligence is artificial.</p>
+            <p className="text-[10px] text-[#ba8659]/85 font-sans font-medium tracking-wide">Our pigskin intelligence is artificial.</p>
           </div>
         </div>
 
@@ -191,24 +197,24 @@ export default function App() {
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto relative z-10">
           
           <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full md:w-64">
-            <Search className="absolute left-3 text-white/40" size={15} />
+            <Search className="absolute left-3 text-white/30" size={14} />
             <input
               type="text"
               placeholder="Sleeper Username..."
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-20 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-purple-450 focus:bg-white/10 transition-all font-sans shadow-sm focus:ring-1 focus:ring-purple-400/20"
+              className="w-full bg-black/40 border border-white/10 rounded-lg pl-9 pr-20 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[#ba8659]/60 focus:bg-black/60 transition-all font-sans shadow-sm"
             />
             <button
               type="submit"
-              className="absolute right-1.5 px-2.5 py-1 text-[10px] bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 font-sans font-semibold rounded-lg text-white shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95"
+              className="absolute right-1.5 px-3 py-1 text-[9px] bg-[#ba8659]/90 hover:bg-[#a27248] font-athletic tracking-widest uppercase rounded text-white shadow-md cursor-pointer transition-all hover:scale-102 active:scale-98"
             >
               Search
             </button>
           </form>
 
           {/* Sync badge info with Sleeper avatar integration */}
-          <div className="flex items-center gap-2.5 self-start md:self-auto font-mono text-2xs bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-white/70 shadow-sm">
+          <div className="flex items-center gap-2.5 self-start md:self-auto font-mono text-3xs border border-[#ba8659]/20 rounded-lg bg-[#0e1110] px-3 py-2 text-white/60 shadow-sm">
             {user?.avatar ? (
               <img 
                 src={`https://sleepercdn.com/avatars/thumbs/${user.avatar}`} 
@@ -225,6 +231,9 @@ export default function App() {
 
       </header>
 
+      {/* Global Trending Players Ticker Row */}
+      <TrendingTicker />
+
       {/* Main Container screen slots */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8 relative z-10">
         
@@ -232,7 +241,7 @@ export default function App() {
         {(loadingUser || loadingLeagues) ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
             <div className="p-4 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
-              <RefreshCw className="animate-spin text-amber-400" size={26} />
+              <RefreshCw className="animate-spin text-purple-400" size={26} />
             </div>
             <div className="space-y-1">
               <p className="text-md font-sans font-semibold text-slate-200">Querying Sleeper API Matrix...</p>
@@ -244,32 +253,31 @@ export default function App() {
           <div className="max-w-3xl mx-auto py-12 px-4 space-y-12">
             <div className="text-center space-y-4">
               <div className="flex justify-center mb-2">
-                <GridironLogo size={84} className="filter drop-shadow-[0_10px_20px_rgba(186,134,89,0.25)]" animate={true} />
+                <GridironLogo size={84} className="filter drop-shadow-[0_10px_20px_rgba(186,134,89,0.3)]" animate={true} />
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-mono">
-                <Zap size={12} className="animate-bounce" />
-                The Ultimate Fantasy Dynasty Command Center
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-[#ba8659]/10 border border-[#ba8659]/20 text-[#ba8659] text-[11px] font-sans font-medium tracking-wide">
+                <Zap size={11} className="animate-pulse text-[#ba8659]" />
+                Our pigskin intelligence is artificial.
               </div>
-              <h2 className="text-4xl font-sans font-extrabold tracking-tight bg-gradient-to-r from-white via-purple-100 to-indigo-300 bg-clip-text text-transparent">
+              <h2 className="text-4xl md:text-5xl font-athletic tracking-widest text-[#fcf9f5] uppercase" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
                 Unlock Your Gridiron Empire
               </h2>
-              <p className="text-sm text-slate-400 max-w-lg mx-auto font-sans leading-relaxed">
-                GridironLM compiles your complete Sleeper League histories, active rosters, power ratings, and matchups. Powered by real-time Sleeper API synchronization.
+              <p className="text-xs md:text-sm text-slate-400 max-w-lg mx-auto font-sans leading-relaxed">
+                GRIDIRONLM parses your total Sleeper League history, active rosters, custom ratings, and weekly matchups. Built directly on live Sleeper API query layers.
               </p>
             </div>
 
             {/* Main search card */}
-            <div className="bg-gradient-to-b from-slate-900/80 to-slate-950/80 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="bg-black/60 border border-[#ba8659]/20 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ba8659]/5 rounded-full blur-3xl pointer-events-none"></div>
               
               <div className="space-y-6">
                 <div className="space-y-2 text-center md:text-left">
-                  <h3 className="text-lg font-sans font-bold text-slate-100 flex items-center justify-center md:justify-start gap-2">
-                    <Search size={18} className="text-purple-400" />
+                  <h3 className="text-lg font-playbook font-bold text-[#fcf9f5] flex items-center justify-center md:justify-start gap-2.5">
+                    <Search size={18} className="text-[#ba8659]" />
                     Enter Username to Sync
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-400 font-sans">
                     We'll fetch your active dynasty rosters, compile historical cross-league rollup statistics, and prepare live multi-season analytics.
                   </p>
                 </div>
@@ -282,12 +290,12 @@ export default function App() {
                       placeholder="Your Sleeper Username..."
                       value={usernameInput}
                       onChange={(e) => setUsernameInput(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-450 focus:ring-1 focus:ring-purple-400/25 shadow-inner"
+                      className="w-full bg-black/40 border border-white/10 rounded-lg pl-11 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#ba8659] focus:ring-1 focus:ring-[#ba8659]/30 shadow-inner"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 text-sm font-semibold rounded-xl text-white shadow-lg transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-3 bg-[#ba8659] hover:bg-[#a27248] text-sm font-athletic tracking-widest uppercase rounded-lg text-white shadow-lg transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-2"
                   >
                     <RefreshCw size={14} />
                     Get Started
@@ -295,9 +303,9 @@ export default function App() {
                 </form>
 
                 <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="text-[10px] text-slate-500 font-mono flex items-center gap-2">
-                    <Globe size={12} className="text-emerald-400" />
-                    Secure integration • Standard Sleeper Public APIs
+                  <div className="text-[9px] text-slate-500 font-mono flex items-center gap-2 tracking-wider">
+                    <Globe size={11} className="text-emerald-500" />
+                    SECURE DATA LINK • REAL-TIME SLEEPER DATABASE API
                   </div>
                   
                   {/* Demo/Preview Trigger */}
@@ -306,9 +314,9 @@ export default function App() {
                       setUsernameInput("VaderFC");
                       loadDynastyHub("VaderFC");
                     }}
-                    className="text-xs text-purple-400 hover:text-purple-300 font-sans font-medium transition-colors flex items-center gap-1 bg-purple-500/5 border border-purple-500/10 rounded-lg px-3 py-1 cursor-pointer"
+                    className="text-[10.5px] text-[#ba8659] hover:text-amber-200 font-typewriter transition-colors flex items-center gap-1.5 bg-[#ba8659]/5 border border-[#ba8659]/15 rounded-md px-3.5 py-1.5 cursor-pointer"
                   >
-                    <span>Browse with Demo Account (@VaderFC)</span>
+                    <span>Browse Demo Account (@VaderFC)</span>
                     <span>→</span>
                   </button>
                 </div>
@@ -317,32 +325,32 @@ export default function App() {
 
             {/* Feature Highlights Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-              <div className="p-5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                <div className="p-2 w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <div className="p-5 bg-black/40 border-2 border-dashed border-[#ba8659]/20 rounded-xl space-y-3">
+                <div className="p-2 w-8 h-8 rounded bg-[#ba8659]/10 text-[#ba8659] flex items-center justify-center">
                   <History size={16} />
                 </div>
-                <h4 className="text-xs font-sans font-bold text-slate-200">Lifetime Ledger Rollup</h4>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
+                <h4 className="text-xs font-playbook font-bold text-[#fcf9f5] uppercase tracking-wider">Lifetime Ledger Rollup</h4>
+                <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
                   Deep indexes multiple seasons (2021-2026) to compile structural win/loss records and cumulative scores.
                 </p>
               </div>
 
-              <div className="p-5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                <div className="p-2 w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <div className="p-5 bg-black/40 border-2 border-dashed border-[#ba8659]/20 rounded-xl space-y-3">
+                <div className="p-2 w-8 h-8 rounded bg-[#ba8659]/10 text-amber-500 flex items-center justify-center">
                   <Trophy size={16} />
                 </div>
-                <h4 className="text-xs font-sans font-bold text-slate-200">Interactive Sub-Tabs</h4>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
+                <h4 className="text-xs font-playbook font-bold text-[#fcf9f5] uppercase tracking-wider">Interactive Sub-Tabs</h4>
+                <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
                   Real-time rosters, points-scored, and weekly head-to-head match-up scores mapped seamlessly.
                 </p>
               </div>
 
-              <div className="p-5 bg-white/5 border border-white/5 rounded-2xl space-y-2">
-                <div className="p-2 w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <div className="p-5 bg-black/40 border-2 border-dashed border-[#ba8659]/20 rounded-xl space-y-3">
+                <div className="p-2 w-8 h-8 rounded bg-[#ba8659]/10 text-[#ba8659] flex items-center justify-center">
                   <TrendingUp size={16} />
                 </div>
-                <h4 className="text-xs font-sans font-bold text-slate-200">Active Matchup Tracking</h4>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
+                <h4 className="text-xs font-playbook font-bold text-[#fcf9f5] uppercase tracking-wider">Active Matchup Tracking</h4>
+                <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
                   Analyze head-to-head match-up scores, bench support, and starting roster lineups on an active week-by-week basis.
                 </p>
               </div>
@@ -365,7 +373,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => loadDynastyHub("VaderFC")}
-                className="px-4 py-1.5 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 border border-white/10 rounded-xl text-2xs text-white cursor-pointer shadow-md transition-all"
+                className="px-4 py-1.5 bg-[#ba8659]/90 hover:bg-[#a27248] border border-[#ba8659]/30 rounded text-2xs text-white font-athletic tracking-widest uppercase cursor-pointer shadow-md transition-all"
               >
                 Explore Demo (VaderFC)
               </button>
@@ -373,7 +381,7 @@ export default function App() {
           </div>
         ) : leagues.length === 0 ? (
           <div className="text-center py-20 space-y-3">
-            <p className="text-sm font-sans text-slate-400">No active dynasty rosters found for user <strong className="text-purple-400">@{activeUsername}</strong> on Sleeper.</p>
+            <p className="text-sm font-sans text-slate-400">No active dynasty rosters found for user <strong className="text-[#ba8659] font-typewriter">@{activeUsername}</strong> on Sleeper.</p>
             <p className="text-2xs text-slate-500 max-w-xs mx-auto">Verify on Sleeper that this username has active dynasty franchises set up under NFL.</p>
             <button
               onClick={() => {
@@ -395,10 +403,10 @@ export default function App() {
               {/* Main Summary hub tab */}
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`px-4 py-3 text-xs font-sans font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer rounded-t-lg ${
+                className={`px-4 py-3 text-xs font-playbook font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer rounded-t-md ${
                   activeTab === "overview"
-                    ? "border-b-purple-500 text-white bg-white/5"
-                    : "border-b-transparent text-white/60 hover:text-white hover:bg-white/5"
+                    ? "border-b-[#ba8659] text-white bg-[#ba8659]/10"
+                    : "border-b-transparent text-white/50 hover:text-white hover:bg-white/5"
                 }`}
               >
                 <Compass size={14} />
@@ -413,10 +421,10 @@ export default function App() {
                     setActiveTab(leg.leagueId);
                     setActiveSubTab("roster"); // Reset sub tab
                   }}
-                  className={`px-4 py-3 text-xs font-sans font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer rounded-t-lg ${
+                  className={`px-4 py-3 text-xs font-playbook font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer rounded-t-md ${
                     activeTab === leg.leagueId
-                      ? "border-b-purple-500 text-white bg-white/5"
-                      : "border-b-transparent text-white/60 hover:text-white hover:bg-white/5"
+                      ? "border-b-[#ba8659] text-white bg-[#ba8659]/10"
+                      : "border-b-transparent text-white/50 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   <Activity size={13} />
@@ -465,7 +473,16 @@ export default function App() {
                               {currentSelectedLeague.name}
                             </h2>
                             <span className="text-3xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/60 uppercase tracking-wider">
-                              NFL {currentSelectedLeague.season} Status: {currentSelectedLeague.status}
+                              NFL {currentSelectedLeague.season} Status: {
+                                (() => {
+                                  const s = (currentSelectedLeague.status || "").toUpperCase();
+                                  if (s === "IN_SEASON" || s === "IN-SEASON") return "In-Season";
+                                  if (s === "PRE_SEASON" || s === "PRE-SEASON") return "Pre-Season";
+                                  if (s === "POST_SEASON" || s === "POST-SEASON") return "Post-Season";
+                                  if (s === "OFF_SEASON" || s === "OFF-SEASON") return "Off-Season";
+                                  return currentSelectedLeague.status;
+                                })()
+                              }
                             </span>
                           </div>
 
@@ -483,69 +500,194 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Homepage Interior Sub-Tabs: Navigation for this specific league */}
-                      <div className="flex gap-1.5 p-1 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl max-w-2xl overflow-x-auto scroller-hidden">
-                        <button
-                          onClick={() => setActiveSubTab("roster")}
-                          className={`flex-1 min-w-[70px] py-1.5 px-3 text-2xs font-sans font-bold tracking-wide rounded-lg text-center transition-all cursor-pointer ${
-                            activeSubTab === "roster"
-                              ? "bg-white/15 border border-white/10 text-white shadow-lg"
-                              : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          Roster
-                        </button>
-                        <button
-                          onClick={() => setActiveSubTab("matchup")}
-                          className={`flex-1 min-w-[70px] py-1.5 px-3 text-2xs font-sans font-bold tracking-wide rounded-lg text-center transition-all cursor-pointer ${
-                            activeSubTab === "matchup"
-                              ? "bg-white/15 border border-white/10 text-white shadow-lg"
-                              : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          Matchup
-                        </button>
-                        <button
-                          onClick={() => setActiveSubTab("standings")}
-                          className={`flex-1 min-w-[75px] py-1.5 px-3 text-2xs font-sans font-bold tracking-wide rounded-lg text-center transition-all cursor-pointer ${
-                            activeSubTab === "standings"
-                              ? "bg-white/15 border border-white/10 text-white shadow-lg"
-                              : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          Standings
-                        </button>
-                        <button
-                          onClick={() => setActiveSubTab("trades")}
-                          className={`flex-1 min-w-[70px] py-1.5 px-3 text-2xs font-sans font-bold tracking-wide rounded-lg text-center transition-all cursor-pointer ${
-                            activeSubTab === "trades"
-                              ? "bg-white/15 border border-white/10 text-white shadow-lg"
-                              : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          Trades
-                        </button>
-                        <button
-                          onClick={() => setActiveSubTab("transactions")}
-                          className={`flex-1 min-w-[85px] py-1.5 px-3 text-2xs font-sans font-bold tracking-wide rounded-lg text-center transition-all cursor-pointer ${
-                            activeSubTab === "transactions"
-                              ? "bg-white/15 border border-white/10 text-white shadow-lg"
-                              : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          Transactions
-                        </button>
-                        <button
-                          onClick={() => setActiveSubTab("history")}
-                          className={`flex-1 min-w-[100px] py-1.5 px-3 text-2xs font-sans font-bold tracking-wide rounded-lg text-center transition-all cursor-pointer ${
-                            activeSubTab === "history"
-                              ? "bg-white/15 border border-white/10 text-white shadow-lg"
-                              : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          History & Stats
-                        </button>
-                      </div>
+                      {/* Leagues-specific Analytics Stats Grid */}
+                      {(() => {
+                        // 1. Roster Average Age Profiles
+                        let currentRosterAvgAge = 0;
+                        let leagueAgeSum = 0;
+                        let leagueAgeCount = 0;
+                        if (currentSelectedLeague.userRoster) {
+                          currentSelectedLeague.userRoster.players.forEach((p) => {
+                            if (typeof p.age === "number" && p.age > 0) {
+                              leagueAgeSum += p.age;
+                              leagueAgeCount++;
+                            }
+                          });
+                        }
+                        currentRosterAvgAge = leagueAgeCount > 0 ? (leagueAgeSum / leagueAgeCount) : 0;
+
+                        // 2. Standing Standings Rank
+                        const userRosterIdNum = currentSelectedLeague.userRoster?.roster_id;
+                        const standingIndexRank = currentSelectedLeague.standings.findIndex(r => r.roster_id === userRosterIdNum);
+                        const standingPos = standingIndexRank !== -1 ? standingIndexRank + 1 : "—";
+                        const totalStandingsTeams = currentSelectedLeague.standings.length || 12;
+
+                        // 3. Points For Ranks
+                        const sortedPfStandings = [...currentSelectedLeague.standings].sort((a, b) => {
+                          const pfA = (a.settings.fpts || 0) + (a.settings.fpts_decimal || 0) * 0.01;
+                          const pfB = (b.settings.fpts || 0) + (b.settings.fpts_decimal || 0) * 0.01;
+                          return pfB - pfA;
+                        });
+                        const pfRankInLeague = userRosterIdNum ? sortedPfStandings.findIndex(r => r.roster_id === userRosterIdNum) + 1 : "—";
+                        const totalPointsFor = (currentSelectedLeague.userRoster?.settings.fpts || 0) + (currentSelectedLeague.userRoster?.settings.fpts_decimal || 0) * 0.01;
+
+                        // 4. Points Against Ranks
+                        const sortedPaStandings = [...currentSelectedLeague.standings].sort((a, b) => {
+                          const paA = (a.settings.fpts_against || 0) + (a.settings.fpts_against_decimal || 0) * 0.01;
+                          const paB = (b.settings.fpts_against || 0) + (b.settings.fpts_against_decimal || 0) * 0.01;
+                          return paB - paA;
+                        });
+                        const paRankInLeague = userRosterIdNum ? sortedPaStandings.findIndex(r => r.roster_id === userRosterIdNum) + 1 : "—";
+                        const totalPointsAgainst = (currentSelectedLeague.userRoster?.settings.fpts_against || 0) + (currentSelectedLeague.userRoster?.settings.fpts_against_decimal || 0) * 0.01;
+
+                        return (
+                          <>
+                            {/* Leagues-specific Analytics Stats Grid (for advanced league details) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="league-specific-metrics">
+                              {/* Standing rank card */}
+                              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+                                <div className="space-y-1">
+                                  <p className="text-4xs font-mono uppercase tracking-wider text-white/40">Current Standings</p>
+                                  <h4 className="text-lg font-mono font-bold text-slate-100">
+                                    Rank #{standingPos} <span className="text-3xs font-sans text-white/40">of {totalStandingsTeams}</span>
+                                  </h4>
+                                  <p className="text-4xs text-[#ba8659] font-sans font-bold">
+                                    {standingPos === 1 ? "🏆 Crown Leader" : standingPos <= 4 ? "⚡ Playoff Seed Bound" : "⏳ Contender Bubble"}
+                                  </p>
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                                  <Trophy size={15} />
+                                </div>
+                              </div>
+
+                              {/* Roster Average Age card */}
+                              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+                                <div className="space-y-1">
+                                  <p className="text-4xs font-mono uppercase tracking-wider text-white/40">Squad Age Profile</p>
+                                  <h4 className="text-lg font-mono font-bold text-slate-100">
+                                    {currentRosterAvgAge > 0 ? `${currentRosterAvgAge.toFixed(1)} yr` : "—"}
+                                  </h4>
+                                  <p className="text-4xs text-purple-400 font-sans font-bold">
+                                    {currentRosterAvgAge > 0 
+                                      ? (currentRosterAvgAge < 24.5 ? "🌱 Rebuild / Youth Mode" : currentRosterAvgAge <= 27 ? "⚡ Active Prime Contender" : "👴 Peak Veteran Window")
+                                      : "No roster players"}
+                                  </p>
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                                  <Calendar size={15} />
+                                </div>
+                              </div>
+
+                              {/* PF Rank (Points For) card */}
+                              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+                                <div className="space-y-1">
+                                  <p className="text-4xs font-mono uppercase tracking-wider text-white/40">Offensive Output (PF)</p>
+                                  <h4 className="text-lg font-mono font-bold text-slate-100">
+                                    {totalPointsFor.toFixed(1)} <span className="text-4xs font-sans text-white/40">Rank #{pfRankInLeague}</span>
+                                  </h4>
+                                  <p className="text-4xs text-emerald-400 font-sans font-bold">
+                                    {pfRankInLeague === 1 ? "🔥 Most Explosive Offense" : (typeof pfRankInLeague === "number" && pfRankInLeague <= 4) ? "📈 Premium Scoring" : "📉 Offense Needs Work"}
+                                  </p>
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                                  <TrendingUp size={15} />
+                                </div>
+                              </div>
+
+                              {/* PA Rank / Strength of Schedule card */}
+                              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+                                <div className="space-y-1">
+                                  <p className="text-4xs font-mono uppercase tracking-wider text-white/40">Opponent Schedule (PA)</p>
+                                  <h4 className="text-lg font-mono font-bold text-slate-100">
+                                    {totalPointsAgainst.toFixed(1)} <span className="text-4xs font-sans text-white/40">Rank #{paRankInLeague}</span>
+                                  </h4>
+                                  <p className="text-4xs text-purple-400 font-sans font-bold">
+                                    {(typeof paRankInLeague === "number" && paRankInLeague <= 3) ? "🎯 Toughest Opponents" : (typeof paRankInLeague === "number" && paRankInLeague >= 10) ? "🍀 Lucky Easy Matchups" : "⚖️ Moderate Opponent Luck"}
+                                  </p>
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                                  <Activity size={15} />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Dropdown Menu Sector - Clean and streamlined to avoid tab clutter */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0c0f0e]/60 border border-purple-500/20 rounded-2xl p-5 relative z-20">
+                              <div className="space-y-0.5">
+                                <h3 className="text-xs font-sans font-bold text-[#fcf9f5] uppercase tracking-wider">Franchise Data Vault</h3>
+                                <p className="text-3xs text-purple-200/50">Access dynamic rosters, live records, and full historical details.</p>
+                              </div>
+
+                              <div className="relative w-full sm:w-auto" id="league-view-dropdown-container">
+                                <button
+                                  type="button"
+                                  onClick={() => setSubTabDropdownOpen(!subTabDropdownOpen)}
+                                  className="w-full sm:w-64 inline-flex justify-between items-center gap-2.5 px-4 py-2.5 border border-purple-500/30 rounded-xl bg-[#090b0a] text-xs font-athletic tracking-widest uppercase text-[#fcf9f5] shadow-xl hover:bg-slate-900 focus:outline-none cursor-pointer transition-all"
+                                  id="league-view-dropdown-trigger"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    {activeSubTab === "roster" && <User2 size={13} className="text-purple-400" />}
+                                    {activeSubTab === "matchup" && <Activity size={13} className="text-[#ff007f]" />}
+                                    {activeSubTab === "standings" && <Trophy size={13} className="text-amber-400" />}
+                                    {activeSubTab === "trades" && <TrendingUp size={13} className="text-emerald-400" />}
+                                    {activeSubTab === "transactions" && <History size={13} className="text-purple-400" />}
+                                    {activeSubTab === "history" && <Compass size={13} className="text-pink-400" />}
+                                    <span className="capitalize">{activeSubTab === "history" ? "History & Stats" : activeSubTab}</span>
+                                  </span>
+                                  <ChevronDown size={14} className={`text-purple-400 transition-transform duration-200 ${subTabDropdownOpen ? "rotate-180" : ""}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                  {subTabDropdownOpen && (
+                                    <>
+                                      {/* Backdrop click barrier */}
+                                      <div className="fixed inset-0 z-10" onClick={() => setSubTabDropdownOpen(false)} />
+                                      <motion.div
+                                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                        transition={{ duration: 0.12 }}
+                                        className="absolute right-0 mt-2 w-full sm:w-64 rounded-xl bg-[#090b0a] border border-purple-500/20 shadow-2xl z-20 overflow-hidden backdrop-blur-xl"
+                                        id="league-view-dropdown-items"
+                                      >
+                                        <div className="p-1.5 space-y-0.5">
+                                          {[
+                                            { id: "roster", label: "Roster", icon: <User2 size={13} />, color: "text-purple-400" },
+                                            { id: "matchup", label: "Matchup", icon: <Activity size={13} />, color: "text-[#ba8659]" },
+                                            { id: "standings", label: "Standings", icon: <Trophy size={13} />, color: "text-amber-400" },
+                                            { id: "trades", label: "Trades", icon: <TrendingUp size={13} />, color: "text-emerald-400" },
+                                            { id: "transactions", label: "Transactions", icon: <History size={13} />, color: "text-purple-400" },
+                                            { id: "history", label: "History & Stats", icon: <Compass size={13} />, color: "text-pink-400" }
+                                          ].map((opt) => (
+                                            <button
+                                              key={opt.id}
+                                              onClick={() => {
+                                                setActiveSubTab(opt.id as any);
+                                                setSubTabDropdownOpen(false);
+                                              }}
+                                              className={`w-full flex items-center justify-between px-3 py-2 text-2xs font-sans font-semibold rounded-lg text-left transition-all cursor-pointer ${
+                                                activeSubTab === opt.id
+                                                  ? "bg-white/10 text-white"
+                                                  : "text-white/60 hover:text-white hover:bg-white/5"
+                                              }`}
+                                            >
+                                              <span className="flex items-center gap-2">
+                                                <span className={opt.color}>{opt.icon}</span>
+                                                <span>{opt.label}</span>
+                                              </span>
+                                              {activeSubTab === opt.id && <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </motion.div>
+                                    </>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
 
                       {/* Homepage Interior Switch */}
                       <div className="pt-2">
@@ -606,12 +748,12 @@ export default function App() {
       </main>
 
       {/* Global Footer */}
-      <footer className="border-t border-white/10 py-6 mt-12 bg-white/2 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-3 text-white/40 text-3xs font-mono">
-          <p>© 2026 Gridiron LM - Pulled securely from Sleeper Open Developer Databanks</p>
-          <div className="flex items-center gap-4">
+      <footer className="border-t border-white/5 py-8 mt-16 bg-[#09090b]/40 relative z-10" id="global-footer">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[9px] font-mono tracking-widest text-white/30 uppercase">
+          <p>© 2026 Gridiron LM — Pulled securely from Sleeper Open Developer Databanks</p>
+          <div className="flex items-center gap-3">
             <span>Sleeper Database Live Sync</span>
-            <span>•</span>
+            <span className="text-[#ba8659]">•</span>
             <span>Server-side Caching Active</span>
           </div>
         </div>

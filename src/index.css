@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Map purple to beautiful golden leather browns */
+  --color-purple-50: #faf7f4;
+  --color-purple-100: #f3e8df;
+  --color-purple-200: #e3cca9;
+  --color-purple-300: #cca57d;
+  --color-purple-400: #ba8659; /* Classic pigskin leather brown */
+  --color-purple-500: #a27248;
+  --color-purple-600: #885c39;
+  --color-purple-700: #714a2d;
+  --color-purple-800: #5c3c24;
+  --color-purple-900: #492f1d;
+  --color-purple-950: #291a10;
+
+  /* Map blue/indigo to rich iron/granite greys */
+  --color-blue-50: #f6f6f6;
+  --color-blue-100: #ebebeb;
+  --color-blue-200: #d6d6d6;
+  --color-blue-300: #aeaeae;
+  --color-blue-400: #838383;
+  --color-blue-500: #666666;
+  --color-blue-600: #525252;
+  --color-blue-700: #3a3a3a;
+  --color-blue-800: #2c2c2c;
+  --color-blue-900: #1a1a1a;
+  --color-blue-950: #0f0f0f;
+
+  --color-indigo-50: #f7f7f7;
+  --color-indigo-100: #e8e8e8;
+  --color-indigo-200: #cccccc;
+  --color-indigo-300: #9e9e9e;
+  --color-indigo-400: #707070;
+  --color-indigo-500: #525252;
+  --color-indigo-600: #424242;
+  --color-indigo-700: #333333;
+  --color-indigo-800: #242424;
+  --color-indigo-900: #171717;
+  --color-indigo-950: #0d0d0d;
+
+  /* Map pink to amber/bronze */
+  --color-pink-50: #fffbeb;
+  --color-pink-100: #fef3c7;
+  --color-pink-200: #fde68a;
+  --color-pink-300: #fcd34d;
+  --color-pink-400: #fbbf24;
+  --color-pink-500: #f59e0b;
+  --color-pink-600: #d97706;
+  --color-pink-700: #b45309;
+  --color-pink-800: #92400e;
+  --color-pink-900: #78350f;
+  --color-pink-950: #451a03;
+
+  /* Map emerald to light steel greys for balanced neutral design */
+  --color-emerald-50: #fafafa;
+  --color-emerald-100: #f4f4f5;
+  --color-emerald-200: #e4e4e7;
+  --color-emerald-300: #d4d4d8;
+  --color-emerald-400: #a1a1aa;
+  --color-emerald-500: #71717a;
+  --color-emerald-600: #52525b;
+  --color-emerald-700: #3f3f46;
+  --color-emerald-800: #27272a;
+  --color-emerald-900: #18181b;
+  --color-emerald-950: #09090b;
+
+  /* Custom Gridiron deep brown color classes */
+  --color-gridiron-brown: #a27248;
+  --color-gridiron-grey: #666666;
+}
+

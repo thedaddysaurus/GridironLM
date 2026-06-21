@@ -79,14 +79,18 @@ export default function App() {
     return () => clearInterval(interval);
   }, [cacheStatus.loaded]);
 
-  // 2. Fetch user and their subsequent leagues
-  async function loadDynastyHub(targetUsername: string) {
-    setLoadingUser(true);
-    setError(null);
-    setLeagues([]);
-    setTotalLeaguesToLoad(0);
-    setLoadedLeaguesCount(0);
-    setIsProgressiveLoading(false);
+  // 2. Fetch user and their subsequent leagues with Stale-While-Revalidate caching
+  async function loadDynastyHub(targetUsername: string, isRevalidation: boolean = false) {
+    if (!isRevalidation) {
+      setLoadingUser(true);
+      setError(null);
+      setLeagues([]);
+      setTotalLeaguesToLoad(0);
+      setLoadedLeaguesCount(0);
+      setIsProgressiveLoading(false);
+    } else {
+      setIsProgressiveLoading(true);
+    }
     setActiveTab("overview");
 
     try {
@@ -102,39 +106,44 @@ export default function App() {
       const userData: SleeperUser = await userRes.json();
       setUser(userData);
       setActiveUsername(targetUsername);
-      // Persist successful username search
+      
+      // Persist successful username data and user record
       localStorage.setItem("sleeper_username", targetUsername);
+      localStorage.setItem("sleeper_cached_user", JSON.stringify(userData));
 
       // Step B: Fetch leagues list (usually under 200ms)
-      setLoadingLeagues(true);
+      if (!isRevalidation) {
+        setLoadingLeagues(true);
+      }
       const leaguesRes = await fetch(`/api/sleeper/leagues/${userData.user_id}`);
       if (!leaguesRes.ok) {
         throw new Error("Failed fetching leagues from Sleeper databank.");
       }
       const rawLeagues: any[] = await leaguesRes.json();
+      setLoadingLeagues(false);
 
       if (!Array.isArray(rawLeagues) || rawLeagues.length === 0) {
         setLeagues([]);
-        setLoadingLeagues(false);
+        localStorage.removeItem("sleeper_cached_leagues");
         return;
       }
 
-      // We have the raw leagues list! Clear the blocking overlay and load individually
-      setLoadingLeagues(false);
       setTotalLeaguesToLoad(rawLeagues.length);
       setIsProgressiveLoading(true);
 
       // Step C: Fetch detailed details for each league progressively in background
       let loadedCount = 0;
+      const loadedDetailList: LeagueDetails[] = [];
       const detailPromises = rawLeagues.map(async (leg) => {
         try {
           const detailRes = await fetch(`/api/sleeper/league/${leg.league_id}?userId=${userData.user_id}`);
           if (detailRes.ok) {
             const detail: LeagueDetails = await detailRes.json();
             if (detail && detail.status !== "complete" && detail.status !== "closed") {
+              loadedDetailList.push(detail);
               setLeagues((prev) => {
-                if (prev.some((p) => p.leagueId === detail.leagueId)) return prev;
-                return [...prev, detail];
+                const filtered = prev.filter((p) => p.leagueId !== detail.leagueId);
+                return [...filtered, detail];
               });
             }
           }
@@ -146,13 +155,17 @@ export default function App() {
         }
       });
 
-      // Turn off loading animation once all are attempted/resolved
-      Promise.all(detailPromises).finally(() => {
-        setIsProgressiveLoading(false);
-      });
+      // Wait for all to complete
+      await Promise.all(detailPromises);
+      if (loadedDetailList.length > 0) {
+        localStorage.setItem("sleeper_cached_leagues", JSON.stringify(loadedDetailList));
+      }
+      setIsProgressiveLoading(false);
 
     } catch (err: any) {
-      setError(err.message || "Failed initializing Dynasty Hub.");
+      if (!isRevalidation) {
+        setError(err.message || "Failed initializing Dynasty Hub.");
+      }
       setLoadingLeagues(false);
     } finally {
       setLoadingUser(false);
@@ -163,7 +176,27 @@ export default function App() {
   useEffect(() => {
     const saved = localStorage.getItem("sleeper_username");
     if (saved) {
-      loadDynastyHub(saved);
+      const cachedUser = localStorage.getItem("sleeper_cached_user");
+      const cachedLeagues = localStorage.getItem("sleeper_cached_leagues");
+      let revalidateImmediately = true;
+      
+      if (cachedUser && cachedLeagues) {
+        try {
+          setUser(JSON.parse(cachedUser));
+          setLeagues(JSON.parse(cachedLeagues));
+          setActiveUsername(saved);
+          
+          // Revalidate silently in the background
+          loadDynastyHub(saved, true);
+          revalidateImmediately = false;
+        } catch (e) {
+          console.warn("Cached data was invalid or cleared", e);
+        }
+      }
+      
+      if (revalidateImmediately) {
+        loadDynastyHub(saved, false);
+      }
     }
   }, []);
 
@@ -256,6 +289,8 @@ export default function App() {
                   setActiveUsername("");
                   setLeagues([]);
                   localStorage.removeItem("sleeper_username");
+                  localStorage.removeItem("sleeper_cached_user");
+                  localStorage.removeItem("sleeper_cached_leagues");
                   setActiveTab("overview");
                 }}
                 className="flex items-center justify-center w-8 h-8 rounded-lg border border-red-900/40 bg-red-950/20 hover:bg-red-950/55 hover:border-red-700/60 text-red-400 hover:text-red-200 transition-all cursor-pointer shadow-sm select-none"

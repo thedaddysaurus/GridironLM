@@ -106,13 +106,366 @@ select:-webkit-autofill:focus {
   box-shadow: none !important;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
 .vintage-playbook-grid {
-  background-color: #0c0f0e; /* Matte vintage blackboard/chalkboard */
+  /* Default: Light vintage coach playbook paper template */
+  background-color: #f7f3eb; 
+  background-image: 
+    radial-gradient(circle at center, rgba(162, 114, 72, 0.12) 1.5px, transparent 1.5px),
+    linear-gradient(rgba(162, 114, 72, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(162, 114, 72, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px, 64px 64px, 64px 64px;
+}
+
+.dark .vintage-playbook-grid {
+  /* Dark: Matte vintage blackboard/chalkboard */
+  background-color: #0c0f0e; 
   background-image: 
     radial-gradient(circle at center, rgba(186, 134, 89, 0.08) 1px, transparent 1px),
     linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
   background-size: 32px 32px, 64px 64px, 64px 64px;
 }
+
+/* LIGHT MODE DEPRECATED - FIXED PERMANENTLY TO DARK MODE ONLY */
+html.light-mode-disabled-by-user-directive {
+  /* Unified warm-paper theme core tone */
+  --color-page-bg: #FCFAF6;
+  
+  background-color: #FCFAF6 !important;
+  color: #1a120b !important;
+
+  /* Basic page structure and overall text constraints */
+  &, body {
+    background-color: #FCFAF6 !important;
+    color: #1a120b !important;
+  }
+
+  /* UNIFIED HEADER & FOOTER - Elegant, identical matching off-white clean borders */
+  header, 
+  footer, 
+  .bg-[#0c0f0e]/90 {
+    background-color: #FAF4EA !important;
+    border-bottom: 2px solid #ba8659 !important;
+    box-shadow: 0 4px 14px rgba(136, 92, 57, 0.08) !important;
+    color: #1a120b !important;
+  }
+  
+  footer {
+    border-top: 2px solid #ba8659 !important;
+    border-bottom: none !important;
+    background-color: #FAF4EA !important;
+    color: #55443c !important;
+  }
+
+  /* HIGH-CONTRAST HEADER LOGO & GENERAL HOVER ELEMENTS */
+  header .text-[#fcf9f5] {
+    color: #1a120b !important;
+  }
+
+  /* UNIFIED TRENDING TICKER CONTAINER */
+  #trending-ticker-container,
+  #ticker-badge-panel,
+  #ticker-sync-btn,
+  .bg-[#0e0d0c] {
+    background-color: #FAF4EA !important;
+    border-color: #ba8659 !important;
+    color: #1a120b !important;
+  }
+
+  /* Ticker sub elements styling for absolute clarity */
+  #trending-ticker-container span:not([class*="bg-"]):not([class*="text-"]) {
+    color: #2F241B !important;
+    font-weight: 700 !important;
+  }
+
+  #trending-ticker-container .text-white\/40,
+  #trending-ticker-container .text-slate-200 {
+    color: #2F241B !important;
+    font-weight: 700 !important;
+  }
+
+  /* DYNAMIC GRADIENTS DESTRUCTION - Solid clean white/leather frames with no dark overlays */
+  .bg-gradient-to-b,
+  [class*="from-neutral"],
+  [class*="to-[#0c0f0e]"],
+  [class*="from-slate-"],
+  [class*="to-slate-"] {
+    background-image: none !important;
+    background-color: #FFFFFF !important;
+  }
+
+  /* MAIN CARD PANELS & CONTENT BOXES - Crisp White with Bold Outlines for Ultimate Containment */
+  .backdrop-blur-xl,
+  .backdrop-blur-md,
+  [class*="rounded-2xl"],
+  .rounded-2xl,
+  .bg-white\/5.backdrop-blur-xl,
+  .bg-white\/5.backdrop-blur-md,
+  .bg-white\/5.backdrop-blur-lg,
+  .bg-white\/5.border-white\/10,
+  #league-dashboard-container > div,
+  .bg-[#0c0f0e]\/60, /* Trade block wrappers are now clean white cards! */
+  .bg-slate-900,
+  .bg-slate-950,
+  main > div,
+  .shadow-xl {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    border: 2px solid #ba8659 !important;
+    box-shadow: 0 6px 18px rgba(136, 92, 57, 0.1), inset 0 1px 0px rgba(255, 255, 255, 0.9) !important;
+    color: #1a120b !important;
+  }
+
+  /* SUB-ITEMS / NESTED ROWS / ROW CONTAINERS - Distinct Warm Contrast */
+  .bg-white\/2, 
+  .bg-white\/1,
+  .bg-white\/5,
+  .bg-white\/10,
+  .bg-slate-950\/20,
+  .bg-purple-500\/10,
+  .bg-indigo-500\/10,
+  tbody tr,
+  .bg-[#121614],
+  .bg-black\/30,
+  .bg-black\/20,
+  .bg-black\/10,
+  .bg-black\/5,
+  .bg-black\/40,
+  .bg-[#090b0a]\/75,
+  details.group {
+    background-color: #FAF4EA !important;
+    border: 1.5px solid #ba8659 !important;
+    color: #1a120b !important;
+    box-shadow: inset 0 1px 1px rgba(136, 92, 57, 0.03) !important;
+  }
+
+  /* Action/Hover states inside rosters and rows */
+  .hover\:bg-white\/10:hover, 
+  .hover\:bg-white\/5:hover, 
+  .hover\:bg-white\/2:hover,
+  .hover\:bg-black\/30:hover {
+    background-color: #ECE1D1 !important;
+    border-color: #8c5d31 !important;
+    color: #1a120b !important;
+  }
+
+  /* Core typography hierarchies - absolute readability */
+  h1, h2, h3, h4, h5, h6,
+  .font-black, .font-bold {
+    color: #1a120b !important;
+  }
+
+  p, span:not([class*="text-"]):not([class*="bg-"]), td, th {
+    color: #2F241B !important;
+  }
+
+  .text-white, 
+  .text-slate-100, 
+  .text-slate-200, 
+  .text-stone-100, 
+  .text-stone-200 {
+    color: #1B130E !important;
+  }
+
+  .text-slate-300, 
+  .text-slate-400, 
+  .text-stone-300, 
+  .text-stone-400,
+  .text-zinc-400 {
+    color: #4A3A2F !important;
+    font-weight: 600 !important;
+  }
+
+  .text-white/80, 
+  .text-white/70, 
+  .text-white/60 {
+    color: #4A3A2F !important;
+    font-weight: 600 !important;
+  }
+
+  .text-white/50, 
+  .text-white/40, 
+  .text-white/30 {
+    color: #6E5B4F !important;
+    font-weight: 700 !important;
+  }
+
+  /* STANDARD ACCENT BORDERS AND DIVIDERS */
+  .border-white\/5, 
+  .border-white\/10, 
+  .border-slate-800, 
+  .border-stone-800,
+  .border-white,
+  .border-slate-700 {
+    border-color: #ba8659 !important;
+  }
+
+  .border-[#ba8659]/15, .border-[#ba8659]/40 {
+    border-color: #ba8659 !important;
+  }
+
+  /* Active main highlights / brass accents */
+  .text-[#ba8659] {
+    color: #8c5d31 !important;
+    font-weight: 800 !important;
+  }
+
+  /* Interactive Tab Switcher Rail Elements */
+  #dynasty-tab-rail button.border-b-[#ba8659], 
+  button.bg-[#ba8659]\/10 {
+    background-color: #FAF4EA !important;
+    color: #1a120b !important;
+    border-bottom: 4px solid #ba8659 !important;
+    font-weight: 800 !important;
+  }
+
+  #dynasty-tab-rail button:not(.border-b-[#ba8659]) {
+    color: #5C4B3E !important;
+    border-bottom-color: transparent !important;
+  }
+
+  /* Tables layout & header styling */
+  thead tr,
+  thead th {
+    background-color: #ECE1D1 !important;
+    border-bottom: 2.5px solid #ba8659 !important;
+    color: #1a120b !important;
+    font-weight: 800 !important;
+  }
+
+  tbody tr {
+    border-bottom: 1.5px solid #E3D4C1 !important;
+  }
+
+  /* Custom formatted Inputs */
+  input {
+    background-color: #FFFFFF !important;
+    color: #1a120b !important;
+    border: 2px solid #ba8659 !important;
+    box-shadow: 0 2px 8px rgba(136, 92, 57, 0.1) !important;
+  }
+  
+  input::placeholder {
+    color: #7E6453 !important;
+  }
+
+  /* Synced badge overlay widget in header */
+  .bg-[#0e1110] {
+    background-color: #FCFAF6 !important;
+    border: 1.5px solid #ba8659 !important;
+    color: #1a120b !important;
+  }
+
+  /* Dropdown lists and popovers */
+  #league-view-dropdown-items, 
+  #league-view-dropdown-trigger,
+  .bg-slate-900\/90 {
+    background-color: #FFFFFF !important;
+    border: 2px solid #ba8659 !important;
+    color: #1a120b !important;
+    box-shadow: 0 10px 25px rgba(136, 92, 57, 0.12) !important;
+  }
+
+  #league-view-dropdown-items button:hover {
+    background-color: #FAF4EA !important;
+    color: #8c5d31 !important;
+  }
+
+  /* SPORT POSITION BADGES & ACTION BULLETS METRICS (EXTREMELY LEGIBLE) */
+  
+  /* Green: Turf Success / Add volume activity */
+  .text-emerald-400, 
+  .text-emerald-300,
+  .text-green-400 {
+    color: #0B533A !important; /* Extremely strong high-contrast forest turf green */
+    font-weight: 800 !important;
+  }
+  .bg-emerald-500\/15, 
+  .bg-emerald-500\/10,
+  .bg-emerald-500\/15.text-emerald-400 {
+    background-color: #E2F5ED !important;
+    border: 1.5px solid #10B981 !important;
+    color: #0B533A !important;
+  }
+
+  /* Red: Active Danger alerts / Drops volume metric */
+  .text-rose-400, 
+  .text-red-400 {
+    color: #881337 !important; /* Outstanding dark crimson warning */
+    font-weight: 800 !important;
+  }
+  .bg-rose-500\/10, 
+  .bg-red-950\/20,
+  .bg-rose-500\/15 {
+    background-color: #FFEAEF !important;
+    border: 1.5px solid #EF4444 !important;
+    color: #881337 !important;
+  }
+
+  /* Blue: QB position & analytical projection indicators */
+  .text-blue-400, 
+  .text-indigo-400,
+  .text-[#ff007f] {
+    color: #123EB1 !important; /* Clean Deep Royal Blue */
+    font-weight: 800 !important;
+  }
+  .bg-blue-500\/15,
+  .bg-[#ff007f]\/10,
+  .bg-[#ff007f]\/15,
+  .bg-purple-500\/10 {
+    background-color: #E8EFFF !important;
+    border: 1.5px solid #3B82F6 !important;
+    color: #123EB1 !important;
+  }
+
+  /* Amber/Gold: WR & Trophy achievements stars */
+  .bg-[#ba8659]\/10, 
+  .bg-[#ba8659]\/15, 
+  .bg-[#ba8659]\/20,
+  .bg-[#e2b13c]\/15 {
+    background-color: #FFFDF0 !important;
+    border: 1.5px solid #E2A22A !important;
+    color: #80530D !important;
+  }
+
+  .text-amber-400,
+  .text-yellow-400,
+  .text-[#e2b13c] {
+    color: #80530D !important;
+    font-weight: 800 !important;
+  }
+
+  /* Orange/Brown: TE positions / transactions alert */
+  .text-[#f5a623],
+  .text-orange-400 {
+    color: #9A3412 !important; /* Bold Burnt Walnut / Orange */
+    font-weight: 800 !important;
+  }
+  .bg-[#f5a623]\/10,
+  .bg-[#f5a623]\/15,
+  .bg-orange-500\/15 {
+    background-color: #FFF3EB !important;
+    border: 1.5px solid #F97316 !important;
+    color: #9A3412 !important;
+  }
+
+  /* Dark mode sparkline view component overrides */
+  #roster-sparkline-tooltip,
+  .bg-\[\#121110\]\/95 {
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #ba8659 !important;
+    color: #1a120b !important;
+  }
+
+  /* JSON raw elements display output */
+  pre {
+    background-color: #0F172A !important;
+    color: #34D399 !important;
+    border: 1.5px solid #ba8659 !important;
+  }
+}
+
 
 

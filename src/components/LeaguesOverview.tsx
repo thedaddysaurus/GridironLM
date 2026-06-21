@@ -838,38 +838,6 @@ export default function LeaguesOverview({ leagues, user, username, onSelectLeagu
         </motion.div>
       </div>
 
-      {/* Developer Diagnostics Disclosure Panel */}
-      <div className="mt-12 border-t border-white/5 pt-8">
-        <details className="group bg-[#090b0a]/75 border border-[#ba8659]/15 rounded-xl p-4 text-xs font-mono text-slate-400">
-          <summary className="cursor-pointer select-none font-sans font-semibold text-slate-300 hover:text-white flex items-center gap-2">
-            <History size={14} className="text-[#ba8659] group-open:rotate-90 transition-transform" />
-            Sleeper API & Sync Engine Diagnostics
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#ba8659]/10 text-[#ba8659] border border-[#ba8659]/20 ml-auto">
-              Inspect Raw JSON Payload
-            </span>
-          </summary>
-          <div className="mt-4 space-y-4 font-mono text-2xs leading-relaxed max-w-full overflow-x-auto">
-            <div>
-              <p className="text-slate-200 font-semibold mb-1">Lifetime Rollup Sync State:</p>
-              <pre className="p-3 bg-black/40 rounded-lg text-emerald-400 border border-white/5 overflow-x-auto max-h-60 scrollbar-thin">
-                {JSON.stringify(lifetimeStats, null, 2)}
-              </pre>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="text-slate-300">Client User ID:</span> <span className="text-[#ba8659] font-bold font-mono">{user?.user_id || "None"}</span>
-              </div>
-              <div>
-                <span className="text-slate-300">Client Username:</span> <span className="text-[#ba8659] font-bold font-mono">@{username}</span>
-              </div>
-              <div>
-                <span className="text-slate-300">Server Sync Core:</span> <span className="text-emerald-400 font-bold">Live Link Connected</span>
-              </div>
-            </div>
-          </div>
-        </details>
-      </div>
-
     </div>
   );
 }

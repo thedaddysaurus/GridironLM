@@ -144,8 +144,56 @@ function resolvePlayer(id: string) {
   };
 }
 
-// Shared memory cache for Sleeper API calls with short-lived and long-lived TTLs to make page loading lightning fast
+// Shared memory cache and disk-persisted database for Sleeper API calls with short-lived and long-lived TTLs to make page loading lightning fast
+const DISK_CACHE_FILE = path.join(process.cwd(), "sleeper_disk_cache.json");
 const sleeperCache = new Map<string, { data: any; expiry: number }>();
+
+// Load persistent disk cache synchronously on startup
+try {
+  if (fs.existsSync(DISK_CACHE_FILE)) {
+    const rawData = fs.readFileSync(DISK_CACHE_FILE, "utf-8");
+    const parsed = JSON.parse(rawData);
+    if (parsed && typeof parsed === "object") {
+      const now = Date.now();
+      let activeCount = 0;
+      for (const [key, value] of Object.entries(parsed)) {
+        const item = value as { data: any; expiry: number };
+        // Reload all cached records (even slightly stale ones are better than raw cold calls; we'll rehydrate normally)
+        if (item && item.expiry > now - 24 * 60 * 60 * 1000) {
+          sleeperCache.set(key, item);
+          activeCount++;
+        }
+      }
+      console.log(`Loaded ${activeCount} active Sleeper API records from persistent disk cache.`);
+    }
+  }
+} catch (err) {
+  console.warn("Failed back-loading persistent Sleeper cache from disk:", err);
+}
+
+// Write-back persist mechanism (debounced 1.5 seconds)
+let cacheSaveTimeout: NodeJS.Timeout | null = null;
+function persistCacheToDisk() {
+  if (cacheSaveTimeout) clearTimeout(cacheSaveTimeout);
+  cacheSaveTimeout = setTimeout(() => {
+    try {
+      const cacheObj: Record<string, { data: any; expiry: number }> = {};
+      const now = Date.now();
+      let savedCount = 0;
+      for (const [key, val] of sleeperCache.entries()) {
+        // Only save records that are fresh or expired within last 24 hours (for revalidation support)
+        if (val.expiry > now - 24 * 60 * 60 * 1000) {
+          cacheObj[key] = val;
+          savedCount++;
+        }
+      }
+      fs.writeFileSync(DISK_CACHE_FILE, JSON.stringify(cacheObj), "utf-8");
+      console.log(`Successfully backed up ${savedCount} Sleeper queries to disk cache.`);
+    } catch (err) {
+      console.error("Error writing Sleeper disk cache:", err);
+    }
+  }, 1500);
+}
 
 async function fetchWithCache(url: string, ttlMs: number = 5 * 60 * 1000) {
   const cached = sleeperCache.get(url);
@@ -161,6 +209,7 @@ async function fetchWithCache(url: string, ttlMs: number = 5 * 60 * 1000) {
   }
   const data = await res.json();
   sleeperCache.set(url, { data, expiry: Date.now() + ttlMs });
+  persistCacheToDisk();
   return data;
 }
 
@@ -266,8 +315,8 @@ app.get("/api/sleeper/leagues/:userId", async (req, res) => {
   }
 
   try {
-    // We poll seasons from 2020 to 2026 to catch both active and historical dynasty settings
-    const seasons = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
+    // We poll active dynasty seasons (2025 and 2026) that are actually loaded and checked by this view
+    const seasons = ["2025", "2026"];
     const allLeaguesMap = new Map<string, any>();
 
     const fetchPromises = seasons.map(async (season) => {
@@ -844,10 +893,12 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
 
         const rostersUrl = `https://api.sleeper.app/v1/league/${currentId}/rosters`;
         const usersUrl = `https://api.sleeper.app/v1/league/${currentId}/users`;
+        const bracketUrl = `https://api.sleeper.app/v1/league/${currentId}/winners_bracket`;
         
-        const [rosters, users] = await Promise.all([
+        const [rosters, users, winnersBracket] = await Promise.all([
           fetchWithCache(rostersUrl, rostersTtl).catch(() => []),
-          fetchWithCache(usersUrl, usersTtl).catch(() => [])
+          fetchWithCache(usersUrl, usersTtl).catch(() => []),
+          fetchWithCache(bracketUrl, rostersTtl).catch(() => [])
         ]);
         
         const usersMap: Record<string, any> = {};
@@ -888,8 +939,27 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
             return b.fpts - a.fpts;
           });
 
-          const champ = sortedRankings[0];
-          const runner = sortedRankings[1];
+          // Accurate Playoff Champion and Runner-up detection
+          let champ = null;
+          let runner = null;
+
+          if (Array.isArray(winnersBracket) && winnersBracket.length > 0) {
+            // Find the matchup for 1st place (where p === 1)
+            const champMatchup = winnersBracket.find((m: any) => m && m.p === 1);
+            if (champMatchup && champMatchup.w !== null && champMatchup.w !== undefined) {
+              const champRosterId = champMatchup.w;
+              const runnerRosterId = champMatchup.l || (champMatchup.w === champMatchup.t1 ? champMatchup.t2 : champMatchup.t1);
+              
+              champ = sortedRankings.find((r) => r.roster_id === champRosterId) || null;
+              runner = sortedRankings.find((r) => r.roster_id === runnerRosterId) || null;
+            }
+          }
+
+          // Fallback to regular season standings if playoffs not completed / no bracket data
+          if (!champ) {
+            champ = sortedRankings[0] || null;
+            runner = sortedRankings[1] || null;
+          }
           
           seasonsList.push({
             leagueId: currentId,

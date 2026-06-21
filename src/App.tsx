@@ -54,6 +54,14 @@ export default function App() {
   // Sub-tabs for specific league homepages: "roster" | "matchup" | "standings" | "ai" | "history" | "trades" | "transactions"
   const [activeSubTab, setActiveSubTab] = useState<"roster" | "matchup" | "standings" | "ai" | "history" | "trades" | "transactions">("roster");
   const [subTabDropdownOpen, setSubTabDropdownOpen] = useState(false);
+  const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
+
+  // Force dark mode exclusively per user request to scrap light mode
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.add('dark');
+    localStorage.setItem("gridiron_theme", "dark");
+  }, []);
 
   // 1. Check Sleeper players caching status from server
   async function checkCacheStatus() {
@@ -211,7 +219,7 @@ export default function App() {
   const currentSelectedLeague = leagues.find((l) => l.leagueId === activeTab);
 
   return (
-    <div className="min-h-screen vintage-playbook-grid text-slate-100 flex flex-col relative overflow-hidden selection:bg-[#ba8659]/30 selection:text-amber-100">
+    <div className="min-h-screen vintage-playbook-grid text-slate-800 dark:text-slate-100 flex flex-col relative overflow-hidden selection:bg-[#ba8659]/30 selection:text-amber-100">
       
       {/* Playbook Tactile Ambient Light Layer */}
       <div className="fixed inset-0 z-0 opacity-20 pointer-events-none">
@@ -481,7 +489,7 @@ export default function App() {
           <div className="space-y-6">
             
             {/* Tab Navigation header bar (Multi-tab layout) */}
-            <div className="flex items-center gap-1.5 border-b border-white/10 overflow-x-auto pb-px" id="dynasty-tab-rail">
+            <div className="flex items-center gap-1.5 border-b border-white/10 pb-px overflow-visible" id="dynasty-tab-rail">
               
               {/* Main Summary hub tab */}
               <button
@@ -496,24 +504,68 @@ export default function App() {
                 Overview Hub
               </button>
 
-              {/* Dynamic league homepage tabs */}
-              {leagues.map((leg) => (
+              {/* Dynasty Leagues Dropdown */}
+              <div className="relative z-40">
                 <button
-                  key={leg.leagueId}
-                  onClick={() => {
-                    setActiveTab(leg.leagueId);
-                    setActiveSubTab("roster"); // Reset sub tab
-                  }}
-                  className={`px-4 py-3 text-xs font-playbook font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer rounded-t-md ${
-                    activeTab === leg.leagueId
+                  type="button"
+                  onClick={() => setLeaguesDropdownOpen(!leaguesDropdownOpen)}
+                  className={`px-4 py-3 text-xs font-playbook font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 cursor-pointer rounded-t-md whitespace-nowrap ${
+                    activeTab !== "overview"
                       ? "border-b-[#ba8659] text-white bg-[#ba8659]/10"
                       : "border-b-transparent text-white/50 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <Activity size={13} />
-                  {leg.name}
+                  <Activity size={13} className={activeTab !== "overview" ? "text-[#ba8659]" : "text-white/50"} />
+                  <span>
+                    {activeTab !== "overview" 
+                      ? leagues.find((l) => l.leagueId === activeTab)?.name || "Select League"
+                      : "Select League"}
+                  </span>
+                  <ChevronDown 
+                    size={13} 
+                    className={`transition-all duration-200 ${leaguesDropdownOpen ? "rotate-180 text-[#ba8659]" : "text-white/40"}`} 
+                  />
                 </button>
-              ))}
+
+                {/* Popover Menu list absolute overlay */}
+                {leaguesDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setLeaguesDropdownOpen(false)} 
+                    />
+                    <div className="absolute left-0 mt-1.5 w-72 md:w-80 bg-[#0a0d0c] border border-[#ba8659]/30 rounded-xl p-1.5 shadow-2xl shadow-black/80 z-50 backdrop-blur-xl max-h-96 overflow-y-auto scrollbar-thin">
+                      {leagues.length === 0 ? (
+                        <div className="px-4 py-3 text-3xs font-mono text-zinc-500 text-center uppercase">
+                          No active leagues synced
+                        </div>
+                      ) : (
+                        leagues.map((leg) => {
+                          const isSelected = activeTab === leg.leagueId;
+                          return (
+                            <button
+                              key={leg.leagueId}
+                              onClick={() => {
+                                setActiveTab(leg.leagueId);
+                                setActiveSubTab("roster");
+                                setLeaguesDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3.5 py-2.5 rounded-lg text-2xs font-sans font-black uppercase tracking-wider transition-all flex items-center justify-between gap-3 ${
+                                isSelected
+                                  ? "bg-[#ba8659]/20 text-white border border-[#ba8659]/30 font-bold"
+                                  : "text-slate-300 hover:text-white hover:bg-white/5 border border-transparent"
+                              }`}
+                            >
+                              <span className="truncate">{leg.name}</span>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#ba8659]" />}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Syncing Badge */}
               {isProgressiveLoading && (
@@ -841,7 +893,7 @@ export default function App() {
       {/* Global Footer */}
       <footer className="border-t border-white/5 py-8 mt-16 bg-[#09090b]/40 relative z-10" id="global-footer">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center text-[9px] font-mono tracking-widest text-white/30 uppercase">
-          <p>© 2026 GRIDIRON LM</p>
+          <p>©2026 GRIDIRON LM v1.1</p>
         </div>
       </footer>
 

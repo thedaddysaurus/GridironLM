@@ -30,32 +30,48 @@ const PLAYERS_CACHE_FILE = path.join(process.cwd(), "compact_players.json");
 // background load players database with file-system caching and deferred background downloader
 async function loadSleeperPlayers() {
   try {
-    // 1. Try to load from local file cache first
+    let loadedFromLocal = false;
+    // 1. Try to load from local file cache first (always trust disk cache on startup for lightning-fast boot)
     try {
-      const stats = await fs.promises.stat(PLAYERS_CACHE_FILE);
-      const fileAgeMs = Date.now() - stats.mtimeMs;
-      // Stale if older than 24 hours
-      if (fileAgeMs < 24 * 60 * 60 * 1000) {
-        console.log("Loading NFL players from local compact cache file...");
-        const rawData = await fs.promises.readFile(PLAYERS_CACHE_FILE, "utf-8");
-        const cached = JSON.parse(rawData);
-        if (cached && typeof cached === "object" && Object.keys(cached).length > 1000) {
-          playersCache = cached;
-          playersLoaded = true;
-          console.log(`Loaded ${Object.keys(playersCache).length} players instantly from local cache.`);
-          return;
+      await fs.promises.access(PLAYERS_CACHE_FILE);
+      console.log("Loading NFL players from local compact cache file...");
+      const rawData = await fs.promises.readFile(PLAYERS_CACHE_FILE, "utf-8");
+      const cached = JSON.parse(rawData);
+      if (cached && typeof cached === "object" && Object.keys(cached).length > 1000) {
+        playersCache = cached;
+        playersLoaded = true;
+        loadedFromLocal = true;
+        console.log(`Loaded ${Object.keys(playersCache).length} players instantly from local cache.`);
+      }
+    } catch (err) {
+      console.warn("Local cache file not loaded, will download from Sleeper API:", err);
+    }
+
+    // Determine if the local cache is stale (older than 3 days) or if we couldn't load anything.
+    // If so, we perform a background update WITHOUT blocking the server or resetting playersLoaded to false.
+    let isStale = true;
+    try {
+      if (loadedFromLocal) {
+        const stats = await fs.promises.stat(PLAYERS_CACHE_FILE);
+        const fileAgeMs = Date.now() - stats.mtimeMs;
+        if (fileAgeMs < 3 * 24 * 60 * 60 * 1000) {
+          isStale = false; // Cache is perfectly fine, no need to refresh yet
         }
       }
     } catch {
-      // Local cache file not found or invalid, continue to fetch from Sleeper API
+      isStale = true;
     }
 
-    // Delay the download if we don't have local cached files, allowing the server to initialize first
-    // without blocking incoming asset requests or locking the single-threaded CPU
-    console.log("Scheduling NFL Players database download from Sleeper...");
+    if (!isStale && loadedFromLocal) {
+      console.log("NFL Players cache is fresh. Skipping background update.");
+      return;
+    }
+
+    // Delay the download to allow the server to initialize first and serve active requests
+    console.log("Scheduling background NFL Players database update from Sleeper...");
     setTimeout(async () => {
       try {
-        console.log("Starting NFL Players data download from Sleeper...");
+        console.log("Starting background NFL Players database update from Sleeper...");
         const res = await fetch("https://api.sleeper.app/v1/players/nfl");
         if (!res.ok) {
           throw new Error(`Sleeper players API returned status ${res.status}`);
@@ -80,18 +96,19 @@ async function loadSleeperPlayers() {
           }
         }
         
+        // Atomically replace cache with the freshly parsed compact players database
         playersCache = compactPlayers;
         playersLoaded = true;
-        console.log(`Successfully cached ${count} active NFL players from Sleeper.`);
+        console.log(`Successfully updated context with ${count} active NFL players from Sleeper.`);
 
-        // Save compacted database locally for instant subsequent boot times
+        // Save compacted database locally for subsequent instant boot times
         await fs.promises.writeFile(PLAYERS_CACHE_FILE, JSON.stringify(compactPlayers), "utf-8");
-        console.log("Compact players cache saved successfully to disk.");
+        console.log("Compact players cache file updated successfully on disk.");
       } catch (err: any) {
         playersLoadingError = err.message || String(err);
-        console.error("Failed to load Sleeper players (background download):", err);
+        console.error("Failed background refresh of Sleeper players:", err);
       }
-    }, 4500); // 4.5 seconds delay allows Express & Vite to bind and serve client packages/views first
+    }, 6000); // 6 seconds delay ensures Zero-Blocked Express Startup
   } catch (err: any) {
     playersLoadingError = err.message || String(err);
     console.error("Unexpected error in players loader setup:", err);

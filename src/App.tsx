@@ -40,6 +40,11 @@ export default function App() {
   const [loadingUser, setLoadingUser] = useState(false);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   
+  // Progressive loading progress stats
+  const [totalLeaguesToLoad, setTotalLeaguesToLoad] = useState(0);
+  const [loadedLeaguesCount, setLoadedLeaguesCount] = useState(0);
+  const [isProgressiveLoading, setIsProgressiveLoading] = useState(false);
+  
   // Cache check state
   const [cacheStatus, setCacheStatus] = useState({ loaded: false, error: "", playerCount: 0 });
   
@@ -79,6 +84,9 @@ export default function App() {
     setLoadingUser(true);
     setError(null);
     setLeagues([]);
+    setTotalLeaguesToLoad(0);
+    setLoadedLeaguesCount(0);
+    setIsProgressiveLoading(false);
     setActiveTab("overview");
 
     try {
@@ -97,7 +105,7 @@ export default function App() {
       // Persist successful username search
       localStorage.setItem("sleeper_username", targetUsername);
 
-      // Step B: Fetch leagues
+      // Step B: Fetch leagues list (usually under 200ms)
       setLoadingLeagues(true);
       const leaguesRes = await fetch(`/api/sleeper/leagues/${userData.user_id}`);
       if (!leaguesRes.ok) {
@@ -111,33 +119,43 @@ export default function App() {
         return;
       }
 
-      // Filter to NFL leagues (which the endpoint does by default, but double-check)
-      // Step C: Fetch detailed details for each league in parallel
-      const detailPromises = rawLeagues.map(async (leg): Promise<LeagueDetails | null> => {
+      // We have the raw leagues list! Clear the blocking overlay and load individually
+      setLoadingLeagues(false);
+      setTotalLeaguesToLoad(rawLeagues.length);
+      setIsProgressiveLoading(true);
+
+      // Step C: Fetch detailed details for each league progressively in background
+      let loadedCount = 0;
+      const detailPromises = rawLeagues.map(async (leg) => {
         try {
           const detailRes = await fetch(`/api/sleeper/league/${leg.league_id}?userId=${userData.user_id}`);
           if (detailRes.ok) {
-            return await detailRes.json();
+            const detail: LeagueDetails = await detailRes.json();
+            if (detail && detail.status !== "complete" && detail.status !== "closed") {
+              setLeagues((prev) => {
+                if (prev.some((p) => p.leagueId === detail.leagueId)) return prev;
+                return [...prev, detail];
+              });
+            }
           }
-          return null;
         } catch (err) {
           console.error(`Failed loading league details for ${leg.league_id}`, err);
-          return null;
+        } finally {
+          loadedCount++;
+          setLoadedLeaguesCount(loadedCount);
         }
       });
 
-      const detailsList = await Promise.all(detailPromises);
-      const activeDetails = detailsList.filter((d): d is LeagueDetails => {
-        return d !== null && d.status !== "complete" && d.status !== "closed";
+      // Turn off loading animation once all are attempted/resolved
+      Promise.all(detailPromises).finally(() => {
+        setIsProgressiveLoading(false);
       });
-
-      setLeagues(activeDetails);
 
     } catch (err: any) {
       setError(err.message || "Failed initializing Dynasty Hub.");
+      setLoadingLeagues(false);
     } finally {
       setLoadingUser(false);
-      setLoadingLeagues(false);
     }
   }
 
@@ -399,6 +417,16 @@ export default function App() {
               </button>
             </div>
           </div>
+        ) : (leagues.length === 0 && isProgressiveLoading) ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
+            <div className="p-4 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
+              <RefreshCw className="animate-spin text-[#ba8659]" size={26} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-md font-sans font-semibold text-slate-200">Retrieving Dynasty Leagues...</p>
+              <p className="text-xs text-slate-500 font-sans max-w-sm">Loaded {loadedLeaguesCount} of {totalLeaguesToLoad} leagues</p>
+            </div>
+          </div>
         ) : leagues.length === 0 ? (
           <div className="text-center py-20 space-y-3">
             <p className="text-sm font-sans text-slate-400">No active dynasty rosters found for user <strong className="text-[#ba8659] font-typewriter">@{activeUsername}</strong> on Sleeper.</p>
@@ -451,6 +479,14 @@ export default function App() {
                   {leg.name}
                 </button>
               ))}
+
+              {/* Syncing Badge */}
+              {isProgressiveLoading && (
+                <div className="ml-auto mr-1 flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-950/20 border border-amber-900/40 text-[10px] text-amber-300 font-mono animate-pulse whitespace-nowrap select-none">
+                  <RefreshCw size={10} className="animate-spin" />
+                  <span>SYNCING: {loadedLeaguesCount}/{totalLeaguesToLoad} LEAGUES</span>
+                </div>
+              )}
 
             </div>
 
@@ -769,13 +805,8 @@ export default function App() {
 
       {/* Global Footer */}
       <footer className="border-t border-white/5 py-8 mt-16 bg-[#09090b]/40 relative z-10" id="global-footer">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[9px] font-mono tracking-widest text-white/30 uppercase">
-          <p>© 2026 Gridiron LM — Pulled securely from Sleeper Open Developer Databanks</p>
-          <div className="flex items-center gap-3">
-            <span>Sleeper Database Live Sync</span>
-            <span className="text-[#ba8659]">•</span>
-            <span>Server-side Caching Active</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 text-center text-[9px] font-mono tracking-widest text-white/30 uppercase">
+          <p>© 2026 GRIDIRON LM</p>
         </div>
       </footer>
 

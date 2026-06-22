@@ -252,8 +252,10 @@ export default function App() {
       <header className="border-b border-white/5 bg-[#0a0d0c]/85 backdrop-blur-xl sticky top-0 z-55 px-4 md:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 relative">
         
         {/* Brand / Logo */}
-        <div className="flex items-center gap-3.5 cursor-pointer select-none relative z-10" onClick={() => setActiveTab("overview")}>
-          <GridironLogo size={36} animate={true} />
+        <div className="flex items-center gap-3.5 cursor-pointer select-none relative z-10 group/logo-nav" onClick={() => setActiveTab("overview")}>
+          <div className="transition-transform duration-300 group-hover/logo-nav:scale-105 active:scale-95 flex items-center justify-center">
+            <GridironLogo size={36} />
+          </div>
           <div>
             <h1 className="text-xl font-athletic tracking-widest text-[#fcf9f5] uppercase flex items-center gap-1.5">
               GRIDIRON<span className="text-[#ba8659]" style={{ textShadow: "0 0 10px rgba(186,134,89,0.2)" }}>LM</span>
@@ -346,7 +348,13 @@ export default function App() {
 
             <div className="text-center space-y-4">
               <div className="flex justify-center mb-2">
-                <GridironLogo size={90} className="filter drop-shadow-[0_12px_24px_rgba(186,134,89,0.25)]" animate={true} />
+                <div className="relative group/logo-hero inline-flex items-center justify-center transition-transform duration-500 hover:scale-110 active:scale-95">
+                  {/* Stable CSS outer glow that never triggers SVG filter rendering bugs */}
+                  <div className="absolute inset-x-2 inset-y-2 bg-[#ba8659]/20 rounded-full blur-2xl opacity-60 group-hover/logo-hero:opacity-90 transition-opacity duration-500" />
+                  <div className="relative z-10">
+                    <GridironLogo size={90} />
+                  </div>
+                </div>
               </div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-[#ba8659]/10 border border-[#ba8659]/20 text-[#ba8659] text-[11px] font-sans font-medium tracking-wide">
                 <Zap size={11} className="animate-pulse text-[#ba8659]" />
@@ -922,6 +930,10 @@ export default function App() {
                           <RosterView 
                             roster={currentSelectedLeague.userRoster} 
                             rosterPositions={currentSelectedLeague.rosterPositions} 
+                            leagueId={currentSelectedLeague.leagueId}
+                            currentSeason={currentSelectedLeague.season}
+                            ownerId={currentSelectedLeague.userRoster.owner_id}
+                            allRosters={currentSelectedLeague.standings}
                           />
                         )}
 
@@ -936,6 +948,9 @@ export default function App() {
                           <StandingsView 
                             standings={currentSelectedLeague.standings} 
                             userRosterId={currentSelectedLeague.userRoster.roster_id} 
+                            leagueId={currentSelectedLeague.leagueId}
+                            currentSeason={currentSelectedLeague.season}
+                            ownerId={currentSelectedLeague.userRoster.owner_id}
                           />
                         )}
 
@@ -999,7 +1014,7 @@ export default function App() {
       {/* Global Footer */}
       <footer className="border-t border-white/5 py-8 mt-8 bg-[#09090b]/40 relative z-10" id="global-footer">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center text-[9px] font-mono tracking-widest text-white/30 uppercase">
-          <p>©2026 GRIDIRON LM | BETA 1.2</p>
+          <p>©2026 GRIDIRON LM | BETA 1.4</p>
         </div>
       </footer>
 

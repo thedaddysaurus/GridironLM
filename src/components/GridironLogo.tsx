@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useId } from "react";
 
 interface GridironLogoProps {
   size?: number;
   className?: string;
-  animate?: boolean;
 }
 
-export default function GridironLogo({ size = 24, className = "", animate = false }: GridironLogoProps) {
+export default function GridironLogo({ size = 24, className = "" }: GridironLogoProps) {
+  const uniqId = useId();
+  const safeIdSuffix = uniqId.replace(/:/g, "");
+  const logoGlow = `logoGlow-${safeIdSuffix}`;
+  const leatherGradient = `leatherGradient-${safeIdSuffix}`;
+  const shieldGradient = `shieldGradient-${safeIdSuffix}`;
+
   return (
     <svg
       width={size}
@@ -14,32 +19,32 @@ export default function GridironLogo({ size = 24, className = "", animate = fals
       viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`${className} ${animate ? "hover:scale-105 transition-transform duration-350" : ""}`}
+      className={`overflow-visible ${className}`}
     >
       {/* Dynamic Background Circle/Glow Area */}
       <defs>
-        <radialGradient id="logoGlow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={logoGlow} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ba8659" stopOpacity="0.25" />
           <stop offset="100%" stopColor="#ba8659" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="leatherGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={leatherGradient} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#cca57d" />
           <stop offset="50%" stopColor="#ba8659" />
           <stop offset="100%" stopColor="#885c39" />
         </linearGradient>
-        <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id={shieldGradient} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#424242" />
           <stop offset="100%" stopColor="#1a1a1a" />
         </linearGradient>
       </defs>
 
       {/* Subtle background glow */}
-      <circle cx="50%" cy="50%" r="48" fill="url(#logoGlow)" />
+      <circle cx="50%" cy="50%" r="48" fill={`url(#${logoGlow})`} />
 
       {/* Outer Tactical Athletic Shield */}
       <path
         d="M50 12 L82 24 V52 C82 70 68 84 50 88 C32 84 18 70 18 52 V24 L50 12 Z"
-        fill="url(#shieldGradient)"
+        fill={`url(#${shieldGradient})`}
         stroke="#ba8659"
         strokeWidth="3.5"
         strokeLinecap="round"
@@ -55,10 +60,9 @@ export default function GridironLogo({ size = 24, className = "", animate = fals
       {/* Left/Right Elliptical Arches */}
       <path
         d="M50 28 C64 36 68 50 68 50 C68 50 64 64 50 72 C36 64 32 50 32 50 C32 50 36 36 50 28 Z"
-        fill="url(#leatherGradient)"
+        fill={`url(#${leatherGradient})`}
         stroke="#ffffff"
         strokeWidth="1"
-        className={animate ? "origin-center hover:rotate-12 transition-transform duration-500" : ""}
       />
 
       {/* Football Laces - Sharp Clean White */}

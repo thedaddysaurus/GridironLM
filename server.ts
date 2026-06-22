@@ -942,6 +942,7 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
               team_name: `Roster ${r.roster_id}`
             };
             const fpts = (r.settings?.fpts || 0) + (r.settings?.fpts_decimal || 0) * 0.01;
+            const fpts_against = (r.settings?.fpts_against || 0) + (r.settings?.fpts_against_decimal || 0) * 0.01;
             const wins = r.settings?.wins || 0;
             const losses = r.settings?.losses || 0;
             const ties = r.settings?.ties || 0;
@@ -953,7 +954,8 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
               wins,
               losses,
               ties,
-              fpts
+              fpts,
+              fpts_against
             };
           }).sort((a, b) => {
             if (b.wins !== a.wins) return b.wins - a.wins;
@@ -982,6 +984,12 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
             runner = sortedRankings[1] || null;
           }
           
+          // Calculate premium seasonal superlatives/insights
+          const fptsLeader = [...sortedRankings].sort((a, b) => b.fpts - a.fpts)[0] || null;
+          const worstLuck = [...sortedRankings].sort((a, b) => b.fpts_against - a.fpts_against)[0] || null;
+          const bestLuck = [...sortedRankings].sort((a, b) => a.fpts_against - b.fpts_against)[0] || null;
+          const regularSeasonChamp = sortedRankings[0] || null;
+
           seasonsList.push({
             leagueId: currentId,
             season: leagueData.season,
@@ -1002,6 +1010,35 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
               avatar: runner.ownerDetails.avatar,
               record: `${runner.wins}-${runner.losses}-${runner.ties}`,
               fpts: runner.fpts
+            } : null,
+            scoringLeader: fptsLeader ? {
+              ownerId: fptsLeader.owner_id,
+              displayName: fptsLeader.ownerDetails.display_name,
+              teamName: fptsLeader.ownerDetails.team_name,
+              avatar: fptsLeader.ownerDetails.avatar,
+              fpts: fptsLeader.fpts
+            } : null,
+            worstLuck: worstLuck ? {
+              ownerId: worstLuck.owner_id,
+              displayName: worstLuck.ownerDetails.display_name,
+              teamName: worstLuck.ownerDetails.team_name,
+              avatar: worstLuck.ownerDetails.avatar,
+              fpts_against: worstLuck.fpts_against
+            } : null,
+            bestLuck: bestLuck ? {
+              ownerId: bestLuck.owner_id,
+              displayName: bestLuck.ownerDetails.display_name,
+              teamName: bestLuck.ownerDetails.team_name,
+              avatar: bestLuck.ownerDetails.avatar,
+              fpts_against: bestLuck.fpts_against
+            } : null,
+            regularSeasonChamp: regularSeasonChamp ? {
+              ownerId: regularSeasonChamp.owner_id,
+              displayName: regularSeasonChamp.ownerDetails.display_name,
+              teamName: regularSeasonChamp.ownerDetails.team_name,
+              avatar: regularSeasonChamp.ownerDetails.avatar,
+              record: `${regularSeasonChamp.wins}-${regularSeasonChamp.losses}-${regularSeasonChamp.ties}`,
+              fpts: regularSeasonChamp.fpts
             } : null
           });
 

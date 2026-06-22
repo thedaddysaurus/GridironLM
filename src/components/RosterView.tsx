@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RichRoster, Player } from "../types";
-import { Search, User2, Zap, Hourglass } from "lucide-react";
-import { motion } from "motion/react";
+import { Search, User2, Zap, Hourglass, Calendar, Shield, RefreshCw } from "lucide-react";
 
 // Deterministic performance trend generator to keep graphs stable and realistic per player
 function getPlayerPerformanceTrend(playerId: string, position: string) {
@@ -121,11 +120,134 @@ function PlayerSparkline({ playerId, position }: { playerId: string; position: s
 interface RosterViewProps {
   roster: RichRoster;
   rosterPositions: string[];
+  leagueId?: string;
+  currentSeason?: string;
+  ownerId?: string;
+  allRosters?: RichRoster[];
 }
 
-export default function RosterView({ roster, rosterPositions }: RosterViewProps) {
+interface HistoricalSeasonBrief {
+  leagueId: string;
+  season: string;
+  name: string;
+}
+
+export default function RosterView({
+  roster: initialRoster,
+  rosterPositions: initialRosterPositions,
+  leagueId,
+  currentSeason = "2026",
+  ownerId,
+  allRosters: initialAllRosters = []
+}: RosterViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPos, setSelectedPos] = useState<string>("ALL");
+
+  // Historical state tracking
+  const [seasons, setSeasons] = useState<HistoricalSeasonBrief[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>(leagueId || "");
+  const [selectedSeason, setSelectedSeason] = useState<string>(currentSeason);
+  const [loadingSeasons, setLoadingSeasons] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // Roster rendering configurations
+  const [rosters, setRosters] = useState<RichRoster[]>(initialAllRosters.length > 0 ? initialAllRosters : [initialRoster]);
+  const [selectedRosterId, setSelectedRosterId] = useState<number>(initialRoster.roster_id);
+  const [rosterPositions, setRosterPositions] = useState<string[]>(initialRosterPositions);
+
+  // Synchronize with changes in leagues
+  useEffect(() => {
+    setRosterPositions(initialRosterPositions);
+    setRosters(initialAllRosters.length > 0 ? initialAllRosters : [initialRoster]);
+    setSelectedSeason(currentSeason);
+    
+    // Default selected roster to matching ownerId if possible, else standard roster
+    if (ownerId && initialAllRosters.length > 0) {
+      const match = initialAllRosters.find(r => r.owner_id === ownerId);
+      if (match) {
+        setSelectedRosterId(match.roster_id);
+        return;
+      }
+    }
+    setSelectedRosterId(initialRoster.roster_id);
+  }, [initialRoster, initialRosterPositions, initialAllRosters, currentSeason, ownerId]);
+
+  // Load available seasons briefly
+  useEffect(() => {
+    if (!leagueId) return;
+    async function fetchHistoricalSeasons() {
+      setLoadingSeasons(true);
+      try {
+        const res = await fetch(`/api/sleeper/league/${leagueId}/history`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.seasons)) {
+            const brief: HistoricalSeasonBrief[] = data.seasons.map((s: any) => ({
+              leagueId: s.leagueId,
+              season: s.season,
+              name: s.name
+            }));
+            setSeasons(brief);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed retrieving historical seasons for rosters dropdown.", err);
+      } finally {
+        setLoadingSeasons(false);
+      }
+    }
+    fetchHistoricalSeasons();
+  }, [leagueId]);
+
+  // Switch season context, loads all rosters for that year inside the league
+  const handleSeasonChange = async (targetLeagueId: string, targetSeason: string) => {
+    setSelectedLeagueId(targetLeagueId);
+    setSelectedSeason(targetSeason);
+    
+    if (targetLeagueId === leagueId) {
+      setRosters(initialAllRosters.length > 0 ? initialAllRosters : [initialRoster]);
+      setRosterPositions(initialRosterPositions);
+      
+      const match = (initialAllRosters.length > 0 ? initialAllRosters : [initialRoster]).find(r => r.owner_id === ownerId);
+      setSelectedRosterId(match ? match.roster_id : initialRoster.roster_id);
+      return;
+    }
+
+    setLoadingDetails(true);
+    try {
+      const res = await fetch(`/api/sleeper/league/${targetLeagueId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.standings)) {
+          setRosters(data.standings);
+          if (data.rosterPositions) {
+            setRosterPositions(data.rosterPositions);
+          }
+          
+          // Attempt to find user roster from that season via ownerId
+          if (ownerId) {
+            const match = data.standings.find((r: any) => r.owner_id === ownerId);
+            if (match) {
+              setSelectedRosterId(match.roster_id);
+              setLoadingDetails(false);
+              return;
+            }
+          }
+          // Fallback to first roster in lists
+          if (data.standings[0]) {
+            setSelectedRosterId(data.standings[0].roster_id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed loading historical league details context: " + targetLeagueId, err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Compute active selected roster
+  const activeRoster = rosters.find(r => r.roster_id === selectedRosterId) || rosters[0] || initialRoster;
 
   // Helper: Get color classes by player position matching Sleeper's authentic solid designs
   const getPositionTag = (pos: string) => {
@@ -177,16 +299,13 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
   };
 
   // Organize starters matching league roster positions (Starters only)
-  // Usually rosterPositions has positions like ['QB', 'RB', 'RB', 'WR', 'WR', 'TE', 'FLEX', 'BN', 'BN'...]
-  // We align starters with these positions in order
   const startersInOrder: { positionLabel: string; player: Player | null }[] = [];
-  const startersPool = [...roster.starters];
+  const startersPool = activeRoster ? [...activeRoster.starters] : [];
 
   // Filters out BN positions for structural starters layout
   const starterPositionsOnly = rosterPositions.filter((pos) => pos !== "BN");
 
   starterPositionsOnly.forEach((posLabel) => {
-    // Find first matching player of position in pool, or fallback for FLEX
     let playerIdx = -1;
     if (posLabel === "FLEX" || posLabel === "SUPER_FLEX") {
       playerIdx = startersPool.findIndex((p) => ["RB", "WR", "TE", "QB"].includes(p.position));
@@ -200,7 +319,6 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
         player: startersPool.splice(playerIdx, 1)[0]
       });
     } else {
-      // No player found for slot
       startersInOrder.push({
         positionLabel: posLabel,
         player: null
@@ -208,7 +326,6 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
     }
   });
 
-  // Remaining starters in pool (if any mismatch) appended as FLEX or generic
   startersPool.forEach((p) => {
     startersInOrder.push({
       positionLabel: p.position,
@@ -217,168 +334,231 @@ export default function RosterView({ roster, rosterPositions }: RosterViewProps)
   });
 
   // Filter Bench players
-  const filteredBench = roster.bench.filter((p) => {
+  const filteredBench = activeRoster ? activeRoster.bench.filter((p) => {
     const matchesSearch = p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (p.team && p.team.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesPos = selectedPos === "ALL" || p.position === selectedPos;
     return matchesSearch && matchesPos;
-  });
+  }) : [];
 
   const positionsList = ["ALL", "QB", "RB", "WR", "TE"];
 
   return (
-    <div className="space-y-8" id="roster-view-container">
-      {/* Starting Lineup Column */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="roster-layouts">
+    <div className="space-y-6 animate-fadeIn" id="roster-view-container">
+      
+      {/* Dual Selector Header: Season Select + Franchise Select */}
+      <div className="bg-[#121110]/50 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         
-        {/* Starters Lineup Card */}
-        <div className="space-y-4" id="starters-lineup">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-sans font-semibold text-white/80 flex items-center gap-2">
-              <Zap className="text-[#ba8659]" size={18} />
-              Starting Roster Lineup
-            </h2>
-            <span className="text-2xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40">
-              {roster.starters.length} Active Slots
+        {/* Season choosing dropdown */}
+        <div className="flex items-center gap-2">
+          <Calendar size={14} className="text-[#ba8659]" />
+          <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Season Context:</span>
+          {loadingSeasons ? (
+            <div className="w-24 h-7 bg-white/5 animate-pulse rounded border border-white/10" />
+          ) : seasons.length > 0 ? (
+            <select
+              value={selectedLeagueId}
+              onChange={(e) => {
+                const s = seasons.find(se => se.leagueId === e.target.value);
+                if (s) {
+                  handleSeasonChange(s.leagueId, s.season);
+                }
+              }}
+              className="bg-[#09090b]/95 text-slate-100 border border-[#ba8659]/30 rounded-lg px-2.5 py-1 text-2xs font-mono font-bold focus:outline-none focus:border-[#ba8659] cursor-pointer"
+            >
+              {seasons.map((s) => (
+                <option key={s.leagueId} value={s.leagueId}>
+                  {s.season} {s.season === currentSeason ? "(Active)" : ""}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-2xs font-mono font-semibold text-slate-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+              {currentSeason}
             </span>
+          )}
+        </div>
+
+        {/* Franchise / Team inspecting selector */}
+        <div className="flex items-center gap-2">
+          <Shield size={14} className="text-[#ba8659]" />
+          <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Inspect Franchise:</span>
+          <select
+            value={selectedRosterId}
+            onChange={(e) => setSelectedRosterId(Number(e.target.value))}
+            className="bg-[#09090b]/95 text-slate-100 border border-[#ba8659]/30 rounded-lg px-2.5 py-1 text-2xs font-mono font-bold focus:outline-none focus:border-[#ba8659] cursor-pointer max-w-[200px] truncate"
+          >
+            {rosters.map((r) => {
+              const matchesUser = ownerId && r.owner_id === ownerId;
+              return (
+                <option key={r.roster_id} value={r.roster_id}>
+                  {r.ownerDetails?.team_name || `Roster ${r.roster_id}`} {matchesUser ? "(Mine)" : ""}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      </div>
+
+      {loadingDetails ? (
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-16 text-center space-y-4">
+          <div className="flex justify-center">
+            <RefreshCw className="animate-spin text-[#ba8659]" size={28} />
+          </div>
+          <p className="text-xs text-white/40 font-mono tracking-widest uppercase">Syncing Roster Ledger for {selectedSeason}...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="roster-layouts">
+          
+          {/* Starters Lineup Card */}
+          <div className="space-y-4" id="starters-lineup">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-sans font-semibold text-white/80 flex items-center gap-2 uppercase tracking-wide">
+                <Zap className="text-[#ba8659]" size={16} />
+                {selectedSeason} Starting Lineup
+              </h2>
+              <span className="text-2xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40">
+                {activeRoster.starters.length} Slots
+              </span>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-5 space-y-3.5 shadow-xl shadow-black/10">
+              {startersInOrder.map((slot, index) => {
+                const p = slot.player;
+                const hasP = p !== null;
+
+                return (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
+                      hasP 
+                        ? "bg-white/2 border-white/5 hover:bg-white/5" 
+                        : "bg-white/1 border-white/5 border-dashed"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Position Label Display */}
+                      <span className="w-14 text-center text-[10px] font-mono font-black tracking-widest px-2 py-1 rounded bg-white/5 text-white/70 uppercase border border-white/5">
+                        {slot.positionLabel === "SUPER_FLEX" ? "SF" : slot.positionLabel}
+                      </span>
+
+                      {hasP ? (
+                        <div className="flex items-center gap-3">
+                          <PlayerAvatar player={p} />
+                          <div>
+                            <p className="text-sm font-sans font-semibold text-slate-200">{p.full_name}</p>
+                            <div className="flex items-center gap-2 text-2xs text-white/40 font-sans mt-0.5">
+                              <span className="font-semibold text-slate-300">{p.team || "FA"}</span>
+                              <span>•</span>
+                              <span>Age {p.age || "N/A"}</span>
+                              <span>•</span>
+                              <span>{p.years_exp ? `${p.years_exp} Yrs Exp` : "Rookie"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs font-mono text-white/30 italic">Unfilled Slot</p>
+                      )}
+                    </div>
+
+                    {hasP && (
+                      <div className="flex items-center gap-3">
+                        <PlayerSparkline playerId={p.id} position={p.position} />
+                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
+                          {p.position}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-5 space-y-3.5 shadow-xl shadow-black/10">
-            {startersInOrder.map((slot, index) => {
-              const p = slot.player;
-              const hasP = p !== null;
+          {/* Bench & Depth Chart Card */}
+          <div className="space-y-4" id="bench-lineup">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <h2 className="text-sm font-sans font-semibold text-white/80 flex items-center gap-2 uppercase tracking-wide">
+                <Hourglass className="text-[#ba8659]" size={16} />
+                {selectedSeason} Bench & Depth
+              </h2>
+              
+              <span className="text-2xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 place-self-start md:place-self-auto">
+                Depth: {activeRoster.bench.length} Players
+              </span>
+            </div>
 
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
-                    hasP 
-                      ? "bg-white/2 border-white/5 hover:bg-white/5" 
-                      : "bg-white/1 border-white/5 border-dashed"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Position Label Display */}
-                    <span className="w-14 text-center text-[10px] font-mono font-black tracking-widest px-2 py-1 rounded bg-white/5 text-white/70 uppercase border border-white/5">
-                      {slot.positionLabel === "SUPER_FLEX" ? "SF" : slot.positionLabel}
-                    </span>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5 shadow-xl shadow-black/10">
+              {/* Search and Filters bar */}
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 text-white/30" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search player name or team..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 font-sans transition-all"
+                  />
+                </div>
 
-                    {hasP ? (
+                {/* Pos Filter Buttons */}
+                <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                  {positionsList.map((pos) => (
+                    <button
+                      key={pos}
+                      onClick={() => setSelectedPos(pos)}
+                      className={`px-3 py-1 text-[10px] font-mono font-bold rounded-lg transition-all cursor-pointer ${
+                        selectedPos === pos
+                          ? "bg-white/15 border border-white/10 text-white shadow-md"
+                          : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      {pos}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bench Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[640px] overflow-y-auto pr-1">
+                {filteredBench.length > 0 ? (
+                  filteredBench.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex justify-between items-center p-3 rounded-xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all duration-200"
+                    >
                       <div className="flex items-center gap-3">
                         <PlayerAvatar player={p} />
                         <div>
-                          <p className="text-sm font-sans font-semibold text-slate-200">{p.full_name}</p>
-                          <div className="flex items-center gap-2 text-2xs text-white/40 font-sans mt-0.5">
-                            <span className="font-semibold text-slate-300">{p.team || "FA"}</span>
-                            <span>•</span>
+                          <p className="text-xs font-semibold text-slate-200 truncate max-w-[120px] md:max-w-[140px]">{p.full_name}</p>
+                          <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                            <span className="font-bold text-white/65">{p.team || "FA"}</span>
+                            {" • "}
                             <span>Age {p.age || "N/A"}</span>
-                            <span>•</span>
-                            <span>{p.years_exp ? `${p.years_exp} Yrs Exp` : "Rookie"}</span>
-                          </div>
+                          </p>
                         </div>
                       </div>
-                    ) : (
-                      <p className="text-xs font-mono text-white/30 italic">Unfilled Slot</p>
-                    )}
-                  </div>
 
-                  {hasP && (
-                    <div className="flex items-center gap-3">
-                      <PlayerSparkline playerId={p.id} position={p.position} />
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
-                        {p.position}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bench & Depth Chart Card */}
-        <div className="space-y-4" id="bench-lineup">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <h2 className="text-lg font-sans font-semibold text-white/80 flex items-center gap-2">
-              <Hourglass className="text-[#ba8659]" size={18} />
-              Bench & Depth Chart
-            </h2>
-            
-            <span className="text-2xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 place-self-start md:place-self-auto">
-              Total depth: {roster.bench.length} Players
-            </span>
-          </div>
-
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5 shadow-xl shadow-black/10">
-            {/* Search and Filters bar */}
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 text-white/30" size={16} />
-                <input
-                  type="text"
-                  placeholder="Search player name or team..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 font-sans transition-all"
-                />
-              </div>
-
-              {/* Pos Filter Buttons */}
-              <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-                {positionsList.map((pos) => (
-                  <button
-                    key={pos}
-                    onClick={() => setSelectedPos(pos)}
-                    className={`px-3 py-1 text-[10px] font-mono font-bold rounded-lg transition-all cursor-pointer ${
-                      selectedPos === pos
-                        ? "bg-white/15 border border-white/10 text-white shadow-md magnet-glow"
-                        : "text-white/40 hover:text-white/80 hover:bg-white/5"
-                    }`}
-                  >
-                    {pos}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Bench Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[640px] overflow-y-auto pr-1">
-              {filteredBench.length > 0 ? (
-                filteredBench.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex justify-between items-center p-3 rounded-xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all duration-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <PlayerAvatar player={p} />
-                      <div>
-                        <p className="text-xs font-semibold text-slate-200 truncate max-w-[120px] md:max-w-[140px]">{p.full_name}</p>
-                        <p className="text-[10px] text-white/40 font-mono mt-0.5">
-                          <span className="font-bold text-white/65">{p.team || "FA"}</span>
-                          {" • "}
-                          <span>Age {p.age || "N/A"}</span>
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <PlayerSparkline playerId={p.id} position={p.position} />
+                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
+                          {p.position}
+                        </span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <PlayerSparkline playerId={p.id} position={p.position} />
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
-                        {p.position}
-                      </span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-1 md:col-span-2 text-center py-10">
+                    <p className="text-xs font-sans text-white/30">No bench players match current criteria.</p>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-1 md:col-span-2 text-center py-10">
-                  <p className="text-xs font-sans text-white/30">No bench players match current criteria.</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-      </div>
+        </div>
+      )}
     </div>
   );
 }

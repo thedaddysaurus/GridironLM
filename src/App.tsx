@@ -1014,7 +1014,7 @@ export default function App() {
       {/* Global Footer */}
       <footer className="border-t border-white/5 py-8 mt-8 bg-[#09090b]/40 relative z-10" id="global-footer">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center text-[9px] font-mono tracking-widest text-white/30 uppercase">
-          <p>©2026 GRIDIRON LM | BETA 1.4</p>
+          <p>©2026 GRIDIRON LM | BETA 1.5</p>
         </div>
       </footer>
 

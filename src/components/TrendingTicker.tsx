@@ -88,7 +88,7 @@ export default function TrendingTicker() {
         ) : activeList.length === 0 ? (
           <span className="pl-4 text-3xs font-mono text-white/40">No major roster adjustments detected in last 24h</span>
         ) : (
-          <div className="flex items-center gap-12 whitespace-nowrap animate-marquee hover:[animation-play-state:paused] h-full pl-4">
+          <div className="flex items-center gap-12 whitespace-nowrap animate-marquee h-full pl-4">
             {/* Displaying duplicated list to ensure contiguous loop */}
             {[...activeList, ...activeList].map((item, idx) => {
               const getPositionColor = (pos: string) => {

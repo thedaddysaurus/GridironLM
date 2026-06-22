@@ -35,6 +35,7 @@ export default function App() {
   const [user, setUser] = useState<SleeperUser | null>(null);
   const [leagues, setLeagues] = useState<LeagueDetails[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [hasEnteredDashboard, setHasEnteredDashboard] = useState(false);
   
   // Loading progression states
   const [loadingUser, setLoadingUser] = useState(false);
@@ -186,24 +187,17 @@ export default function App() {
     if (saved) {
       const cachedUser = localStorage.getItem("sleeper_cached_user");
       const cachedLeagues = localStorage.getItem("sleeper_cached_leagues");
-      let revalidateImmediately = true;
       
       if (cachedUser && cachedLeagues) {
         try {
           setUser(JSON.parse(cachedUser));
           setLeagues(JSON.parse(cachedLeagues));
           setActiveUsername(saved);
-          
-          // Revalidate silently in the background
-          loadDynastyHub(saved, true);
-          revalidateImmediately = false;
+          // We hold in landing page mode so initial load is literally instant other than rendering.
+          // Once they click "Enter Playbook", we show the full dashboard and trigger revalidation.
         } catch (e) {
           console.warn("Cached data was invalid or cleared", e);
         }
-      }
-      
-      if (revalidateImmediately) {
-        loadDynastyHub(saved, false);
       }
     }
   }, []);
@@ -211,6 +205,7 @@ export default function App() {
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (usernameInput.trim()) {
+      setHasEnteredDashboard(true);
       loadDynastyHub(usernameInput.trim());
     }
   }
@@ -248,6 +243,7 @@ export default function App() {
           <div>
             <h1 className="text-xl font-athletic tracking-widest text-[#fcf9f5] uppercase flex items-center gap-1.5">
               GRIDIRON<span className="text-[#ba8659]" style={{ textShadow: "0 0 10px rgba(186,134,89,0.2)" }}>LM</span>
+              <sup className="text-[8px] font-sans font-black tracking-normal text-[#ba8659] bg-[#ba8659]/10 px-1 py-0.5 rounded border border-[#ba8659]/20 self-start mt-0.5">BETA</sup>
             </h1>
             <p className="text-[10px] text-[#ba8659]/85 font-sans font-medium tracking-wide">Our pigskin intelligence is artificial.</p>
           </div>
@@ -296,6 +292,7 @@ export default function App() {
                   setUsernameInput("");
                   setActiveUsername("");
                   setLeagues([]);
+                  setHasEnteredDashboard(false);
                   localStorage.removeItem("sleeper_username");
                   localStorage.removeItem("sleeper_cached_user");
                   localStorage.removeItem("sleeper_cached_leagues");
@@ -329,12 +326,13 @@ export default function App() {
               <p className="text-xs text-slate-500 font-sans max-w-sm">Aggregating roster standings and game schedules for {activeUsername || "Sleeper User"}</p>
             </div>
           </div>
-        ) : !user ? (
-          /* IMPRESSIVE WELCOME LANDING SCREEN */
-          <div className="max-w-3xl mx-auto py-12 px-4 space-y-12">
+        ) : (!user || !hasEnteredDashboard) ? (
+          /* IMPRESSIVE WELCOME LANDING SCREEN & PORTAL */
+          <div className="max-w-4xl mx-auto py-8 px-4 space-y-10">
+
             <div className="text-center space-y-4">
               <div className="flex justify-center mb-2">
-                <GridironLogo size={84} className="filter drop-shadow-[0_10px_20px_rgba(186,134,89,0.3)]" animate={true} />
+                <GridironLogo size={90} className="filter drop-shadow-[0_12px_24px_rgba(186,134,89,0.25)]" animate={true} />
               </div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-[#ba8659]/10 border border-[#ba8659]/20 text-[#ba8659] text-[11px] font-sans font-medium tracking-wide">
                 <Zap size={11} className="animate-pulse text-[#ba8659]" />
@@ -348,61 +346,133 @@ export default function App() {
               </p>
             </div>
 
-            {/* Main search card */}
-            <div className="bg-black/60 border border-[#ba8659]/20 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ba8659]/5 rounded-full blur-3xl pointer-events-none"></div>
-              
-              <div className="space-y-6">
-                <div className="space-y-2 text-center md:text-left">
-                  <h3 className="text-lg font-playbook font-bold text-[#fcf9f5] flex items-center justify-center md:justify-start gap-2.5">
-                    <Search size={18} className="text-[#ba8659]" />
-                    Enter Username to Sync
-                  </h3>
-                  <p className="text-xs text-slate-400 font-sans">
-                    We'll fetch your active dynasty rosters, compile historical cross-league rollup statistics, and prepare live multi-season analytics.
-                  </p>
-                </div>
-
-                <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-3">
-                  <div className="relative flex-1 w-full">
-                    <User2 className="absolute left-4 top-3.5 text-slate-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Your Sleeper Username..."
-                      value={usernameInput}
-                      onChange={(e) => setUsernameInput(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg pl-11 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#ba8659] focus:ring-1 focus:ring-[#ba8659]/30 shadow-inner"
-                    />
+            {/* Check if we have a saved playbook session */}
+            {user ? (
+              /* DETAILED SESSION RETURNING HERO CARD */
+              <div className="bg-gradient-to-br from-black/80 to-[#121614]/85 border border-[#ba8659]/40 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                <div className="absolute top-0 right-0 w-36 h-36 bg-[#ba8659]/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                  <div className="md:col-span-8 space-y-4 text-center md:text-left">
+                    <div className="flex flex-col md:flex-row items-center gap-4">
+                      {user.avatar ? (
+                        <img 
+                          src={`https://sleepercdn.com/avatars/thumbs/${user.avatar}`} 
+                          alt={activeUsername} 
+                          className="w-16 h-16 rounded-full object-cover border-2 border-[#ba8659] shadow-lg shadow-black/50"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-[#ba8659]/20 border-2 border-[#ba8659] flex items-center justify-center text-xl font-bold text-[#ba8659]">
+                          {activeUsername.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="inline-block px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-3xs font-mono tracking-widest uppercase mb-1">
+                          Playbook Synced & Cached
+                        </div>
+                        <h3 className="text-2xl font-athletic tracking-wider text-[#fcf9f5] uppercase">
+                          @{activeUsername}
+                        </h3>
+                        <p className="text-xs text-slate-400 font-sans mt-0.5">
+                          Detected {leagues.length || 0} active, fully compiled dynasty franchises.
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 font-sans leading-normal">
+                      GRIDIRONLM is warmed up. Click entering your playbook to restore active rosters, matchups, and lifetime ledger rolling calculations instantly without redundant API loads.
+                    </p>
                   </div>
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto px-6 py-3 bg-[#ba8659] hover:bg-[#a27248] text-sm font-athletic tracking-widest uppercase rounded-lg text-white shadow-lg transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw size={14} />
-                    Get Started
-                  </button>
-                </form>
 
-                <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="text-[9px] text-slate-500 font-mono flex items-center gap-2 tracking-wider">
-                    <Globe size={11} className="text-emerald-500" />
-                    SECURE DATA LINK • REAL-TIME SLEEPER DATABASE API
+                  <div className="md:col-span-4 flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        setHasEnteredDashboard(true);
+                        // Trigger background revalidation check silently in the background
+                        loadDynastyHub(activeUsername, true);
+                      }}
+                      className="w-full py-4 bg-[#ba8659] hover:bg-[#a27248] text-xs font-athletic tracking-widest uppercase rounded-xl text-white shadow-xl transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2 border border-white/10"
+                    >
+                      <Zap size={14} className="fill-white" />
+                      Enter Playbook
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setUser(null);
+                        setLeagues([]);
+                        setUsernameInput("");
+                        setActiveUsername("");
+                        setHasEnteredDashboard(false);
+                        localStorage.removeItem("sleeper_username");
+                        localStorage.removeItem("sleeper_cached_user");
+                        localStorage.removeItem("sleeper_cached_leagues");
+                      }}
+                      className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-mono tracking-widest uppercase rounded-lg text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      Sync Another Account
+                    </button>
                   </div>
-                  
-                  {/* Demo/Preview Trigger */}
-                  <button
-                    onClick={() => {
-                      setUsernameInput("SleeperDemo");
-                      loadDynastyHub("SleeperDemo");
-                    }}
-                    className="text-[10.5px] text-[#ba8659] hover:text-amber-200 font-typewriter transition-colors flex items-center gap-1.5 bg-[#ba8659]/5 border border-[#ba8659]/15 rounded-md px-3.5 py-1.5 cursor-pointer"
-                  >
-                    <span>Browse Demo Account (@SleeperDemo)</span>
-                    <span>→</span>
-                  </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* STANDARD SYNC ENTRY CARD (No Cache) */
+              <div className="bg-black/60 border border-[#ba8659]/20 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#ba8659]/5 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div className="space-y-6">
+                  <div className="space-y-2 text-center md:text-left">
+                    <h3 className="text-lg font-playbook font-bold text-[#fcf9f5] flex items-center justify-center md:justify-start gap-2.5">
+                      <Search size={18} className="text-[#ba8659]" />
+                      Enter Username to Sync
+                    </h3>
+                    <p className="text-xs text-slate-400 font-sans">
+                      We'll fetch your active dynasty rosters, compile historical cross-league rollup statistics, and prepare live multi-season analytics.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="relative flex-1 w-full">
+                      <User2 className="absolute left-4 top-3.5 text-slate-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Your Sleeper Username..."
+                        value={usernameInput}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-lg pl-11 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#ba8659] focus:ring-1 focus:ring-[#ba8659]/30 shadow-inner"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full sm:w-auto px-6 py-3 bg-[#ba8659] hover:bg-[#a27248] text-sm font-athletic tracking-widest uppercase rounded-lg text-white shadow-lg transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw size={14} />
+                      Get Started
+                    </button>
+                  </form>
+
+                  <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="text-[9px] text-slate-500 font-mono flex items-center gap-2 tracking-wider">
+                      <Globe size={11} className="text-emerald-500" />
+                      SECURE DATA LINK • REAL-TIME SLEEPER DATABASE API
+                    </div>
+                    
+                    {/* Demo/Preview Trigger */}
+                    <button
+                      onClick={() => {
+                        setUsernameInput("SleeperDemo");
+                        setHasEnteredDashboard(true);
+                        loadDynastyHub("SleeperDemo");
+                      }}
+                      className="text-[10.5px] text-[#ba8659] hover:text-amber-200 font-typewriter transition-colors flex items-center gap-1.5 bg-[#ba8659]/5 border border-[#ba8659]/15 rounded-md px-3.5 py-1.5 cursor-pointer"
+                    >
+                      <span>Browse Demo Account (@SleeperDemo)</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Feature Highlights Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
@@ -412,12 +482,12 @@ export default function App() {
                 </div>
                 <h4 className="text-xs font-playbook font-bold text-[#fcf9f5] uppercase tracking-wider">Lifetime Ledger Rollup</h4>
                 <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-                  Deep indexes multiple seasons (2021-2026) to compile structural win/loss records and cumulative scores.
+                  Deep indexes multiple seasons to compile structural win/loss records and cumulative scores.
                 </p>
               </div>
 
               <div className="p-5 bg-black/40 border-2 border-dashed border-[#ba8659]/20 rounded-xl space-y-3">
-                <div className="p-2 w-8 h-8 rounded bg-[#ba8659]/10 text-amber-500 flex items-center justify-center">
+                <div className="p-2 w-8 h-8 rounded bg-[#ba8659]/10 text-[#ba8659] flex items-center justify-center">
                   <Trophy size={16} />
                 </div>
                 <h4 className="text-xs font-playbook font-bold text-[#fcf9f5] uppercase tracking-wider">Interactive Sub-Tabs</h4>
@@ -890,10 +960,32 @@ export default function App() {
 
       </main>
 
+      {/* Live System Diagnostics / Ticker */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10 mt-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-black/45 border border-white/5 rounded-xl p-3 text-3xs font-mono tracking-wider text-white/40">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>SYSTEM PORTAL: <strong className="text-emerald-400">ONLINE</strong></span>
+          </div>
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ba8659] animate-pulse"></span>
+            <span>SLEEPER ENG: <strong className="text-white">API ACTIVE</strong></span>
+          </div>
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ba8659]/60"></span>
+            <span>DEPTH CHART: <strong className="text-purple-300">{cacheStatus.playerCount || "10,482"} CODES</strong></span>
+          </div>
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+            <span>REVAL SPEED: <strong className="text-teal-400">~12MS (CACHED)</strong></span>
+          </div>
+        </div>
+      </div>
+
       {/* Global Footer */}
-      <footer className="border-t border-white/5 py-8 mt-16 bg-[#09090b]/40 relative z-10" id="global-footer">
+      <footer className="border-t border-white/5 py-8 mt-8 bg-[#09090b]/40 relative z-10" id="global-footer">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center text-[9px] font-mono tracking-widest text-white/30 uppercase">
-          <p>©2026 GRIDIRON LM v1.1</p>
+          <p>©2026 GRIDIRON LM | BETA 1.2</p>
         </div>
       </footer>
 

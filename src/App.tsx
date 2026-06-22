@@ -47,7 +47,18 @@ export default function App() {
   const [isProgressiveLoading, setIsProgressiveLoading] = useState(false);
   
   // Cache check state
-  const [cacheStatus, setCacheStatus] = useState({ loaded: false, error: "", playerCount: 0 });
+  const [cacheStatus, setCacheStatus] = useState(() => {
+    try {
+      const saved = localStorage.getItem("gridiron_cache_status");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && typeof parsed.playerCount === "number") {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return { loaded: false, error: "", playerCount: 0 };
+  });
   
   // Navigation Tabs: "overview" or the leagueId of the active franchise
   const [activeTab, setActiveTab] = useState<string>("overview");
@@ -71,6 +82,9 @@ export default function App() {
       if (res.ok) {
         const status = await res.json();
         setCacheStatus(status);
+        try {
+          localStorage.setItem("gridiron_cache_status", JSON.stringify(status));
+        } catch (e) {}
       }
     } catch (err) {
       console.warn("Failed checking players cache status", err);

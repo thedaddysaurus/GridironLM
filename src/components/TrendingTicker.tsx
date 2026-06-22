@@ -134,11 +134,11 @@ export default function TrendingTicker() {
                   {/* Roster Velocity Add/Drop volume level */}
                   <span className="flex items-center gap-0.5 text-[9px] font-mono font-bold ml-1">
                     {type === "adds" ? (
-                      <TrendingUp className="text-emerald-400 shrink-0" size={10} />
+                      <TrendingUp className="text-[#00c176] shrink-0" size={10} />
                     ) : (
                       <TrendingDown className="text-rose-400 shrink-0" size={10} />
                     )}
-                    <span className={type === "adds" ? "text-emerald-400" : "text-rose-400"}>
+                    <span className={type === "adds" ? "text-[#00c176]" : "text-rose-400"}>
                       +{item.count.toLocaleString()}
                     </span>
                   </span>

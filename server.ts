@@ -3,12 +3,14 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import fs from "fs";
+import compression from "compression";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
+app.use(compression());
 app.use(express.json());
 
 // In-memory player cache
@@ -197,9 +199,28 @@ function persistCacheToDisk() {
 
 async function fetchWithCache(url: string, ttlMs: number = 5 * 60 * 1000) {
   const cached = sleeperCache.get(url);
-  if (cached && cached.expiry > Date.now()) {
-    return cached.data;
+  const now = Date.now();
+  if (cached) {
+    if (cached.expiry > now) {
+      return cached.data;
+    } else {
+      // Stale-While-Revalidate: serve stale data immediately and refresh in background
+      console.log(`[Cache SWR] serving stale data for: ${url}`);
+      fetch(url)
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            sleeperCache.set(url, { data, expiry: Date.now() + ttlMs });
+            persistCacheToDisk();
+          }
+        })
+        .catch((err) => {
+          console.warn("[Cache SWR] background refresh failed:", url, err);
+        });
+      return cached.data;
+    }
   }
+
   const res = await fetch(url);
   if (!res.ok) {
     if (res.status === 404) {

@@ -8,6 +8,7 @@ import HistoryView from "./components/HistoryView";
 import TransactionsView from "./components/TransactionsView";
 import GridironLogo from "./components/GridironLogo";
 import TrendingTicker from "./components/TrendingTicker";
+import BuildChangelogModal from "./components/BuildChangelogModal";
 import { 
   Terminal, 
   Search, 
@@ -24,7 +25,8 @@ import {
   History,
   ChevronDown,
   Calendar,
-  LogOut
+  LogOut,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -67,6 +69,7 @@ export default function App() {
   const [activeSubTab, setActiveSubTab] = useState<"roster" | "matchup" | "standings" | "ai" | "history" | "trades" | "transactions">("roster");
   const [subTabDropdownOpen, setSubTabDropdownOpen] = useState(false);
   const [leaguesDropdownOpen, setLeaguesDropdownOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   // Force dark mode exclusively per user request to scrap light mode
   useEffect(() => {
@@ -1014,9 +1017,28 @@ export default function App() {
       {/* Global Footer */}
       <footer className="border-t border-white/5 py-8 mt-8 bg-[#09090b]/40 relative z-10" id="global-footer">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center text-[9px] font-mono tracking-widest text-white/30 uppercase">
-          <p>©2026 GRIDIRON LM | BETA 1.5</p>
+          <p>
+            ©2026 GRIDIRON LM |{" "}
+            <button 
+              onClick={() => setChangelogOpen(true)}
+              className="text-[#ba8659] hover:text-[#d4996a] duration-200 transition-colors underline underline-offset-4 font-bold cursor-pointer select-none focus:outline-none"
+              title="View system release chronicle & automated diagnostic insights"
+            >
+              BETA 1.6
+            </button>
+          </p>
         </div>
       </footer>
+
+      {/* Changelog Index Overlay */}
+      <AnimatePresence>
+        {changelogOpen && (
+          <BuildChangelogModal 
+            isOpen={changelogOpen}
+            onClose={() => setChangelogOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
     </div>
   );

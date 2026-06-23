@@ -992,27 +992,7 @@ export default function App() {
 
       </main>
 
-      {/* Live System Diagnostics / Ticker */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10 mt-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-black/45 border border-white/5 rounded-xl p-3 text-3xs font-mono tracking-wider text-white/40">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>SYSTEM PORTAL: <strong className="text-emerald-400">ONLINE</strong></span>
-          </div>
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ba8659] animate-pulse"></span>
-            <span>SLEEPER ENG: <strong className="text-white">API ACTIVE</strong></span>
-          </div>
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ba8659]/60"></span>
-            <span>DEPTH CHART: <strong className="text-purple-300">{cacheStatus.playerCount || "10,482"} CODES</strong></span>
-          </div>
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#0d100f] border border-white/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
-            <span>REVAL SPEED: <strong className="text-teal-400">~12MS (CACHED)</strong></span>
-          </div>
-        </div>
-      </div>
+
 
       {/* Global Footer */}
       <footer className="border-t border-white/5 py-8 mt-8 bg-[#09090b]/40 relative z-10" id="global-footer">
@@ -1024,7 +1004,7 @@ export default function App() {
               className="text-[#ba8659] hover:text-[#d4996a] duration-200 transition-colors underline underline-offset-4 font-bold cursor-pointer select-none focus:outline-none"
               title="View system release chronicle & automated diagnostic insights"
             >
-              BETA 1.7
+              BETA 1.8
             </button>
           </p>
         </div>

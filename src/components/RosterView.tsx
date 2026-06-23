@@ -74,7 +74,7 @@ function PlayerSparkline({ playerId, position }: { playerId: string; position: s
 
   return (
     <div className="flex items-center gap-2 group/sparkline relative">
-      <div className="w-12 h-4.5 relative flex items-center">
+      <div className="w-[50px] h-[18px] relative flex items-center">
         <svg width={width} height={height} className="overflow-visible">
           <path d={areaPath} fill={fillColor} />
           <path d={linePath} fill="none" stroke={strokeColor} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
@@ -649,7 +649,7 @@ export default function RosterView({
               </div>
 
               {/* Bench Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[640px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                 {filteredBench.length > 0 ? (
                   filteredBench.map((p) => (
                     <div
@@ -659,7 +659,7 @@ export default function RosterView({
                       <div className="flex items-center gap-3">
                         <PlayerAvatar player={p} />
                         <div>
-                          <p className="text-xs font-semibold text-slate-200 truncate max-w-[120px] md:max-w-[140px]">{p.full_name}</p>
+                          <p className="text-xs font-semibold text-slate-200 truncate max-w-[150px]">{p.full_name}</p>
                           <p className="text-[10px] text-white/40 font-mono mt-0.5">
                             <span className="font-bold text-white/65">{p.team || "FA"}</span>
                             {" • "}
@@ -677,7 +677,7 @@ export default function RosterView({
                     </div>
                   ))
                 ) : (
-                  <div className="col-span-1 md:col-span-2 text-center py-10">
+                  <div className="col-span-1 xl:col-span-2 text-center py-10">
                     <p className="text-xs font-sans text-white/30">No bench players match current criteria.</p>
                   </div>
                 )}

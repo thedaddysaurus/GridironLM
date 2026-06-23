@@ -24,10 +24,23 @@ interface BuildItem {
 
 const BUILD_LOG: BuildItem[] = [
   {
+    version: "BETA 1.8",
+    codename: "Clean Canvas & Layout Precision",
+    date: "June 22, 2026",
+    isLatest: true,
+    title: "Optimized Roster Layout & Clean System Footer",
+    tagline: "Improved table alignment, contained sparklines, and polished branding alignment.",
+    releaseInsight: "Optimized the Bench & Depth roster grids to provide clean sparkline clipping and fluid responsive limits on larger displays. Streamlined the global layout by stripping out unnecessary technical diagnostic outputs and aligning visual titles with professional naming standards.",
+    details: [
+      { category: "fix", text: "Revised Bench Grid column counts and sparkline wrapper boundaries to fully enclose layout shapes." },
+      { category: "feature", text: "Cleaned footer workspace to remove diagnostic columns (SYSTEM PORTAL, SLEEPER ENG, DEPTH CHART, REVAL SPEED)." },
+      { category: "fix", text: "Aligned HTML main document title and branding headers with professional lowercase typography convention (Gridiron LM - Dynasty Dashboard)." }
+    ]
+  },
+  {
     version: "BETA 1.7",
     codename: "Visual Longevity",
     date: "June 22, 2026",
-    isLatest: true,
     title: "Starter Age Distributions & Copy Finishes",
     tagline: "Visualized starting roster age brackets against league context.",
     releaseInsight: "Introduced an interactive analytics segment in the team roster manager. A dynamic age distribution comparison chart highlights potential longevity gaps relative to active league competitors.",

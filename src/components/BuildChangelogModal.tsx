@@ -24,16 +24,28 @@ interface BuildItem {
 
 const BUILD_LOG: BuildItem[] = [
   {
+    version: "BETA 1.7",
+    codename: "Visual Longevity",
+    date: "June 22, 2026",
+    isLatest: true,
+    title: "Starter Age Distributions & Copy Finishes",
+    tagline: "Visualized starting roster age brackets against league context.",
+    releaseInsight: "Introduced an interactive analytics segment in the team roster manager. A dynamic age distribution comparison chart highlights potential longevity gaps relative to active league competitors.",
+    details: [
+      { category: "feature", text: "Integrated interactive Recharts-powered starter age distribution charts in active roster modules." },
+      { category: "feature", text: "Refactored applet homepage headers to center trade market efficiency and league synchronization options." }
+    ]
+  },
+  {
     version: "BETA 1.6",
     codename: "Automated Build Portal",
-    date: "June 21, 2026",
-    isLatest: true,
+    date: "June 22, 2026",
     title: "Version Portal & Automated Build Sync",
     tagline: "Unveiled interactive build history logs with automated, jargon-free summary logs.",
     releaseInsight: "Created a clickable release ledger in the footer. It maps our previous versions alongside plain-English summaries of exactly what was introduced or fixed, allowing coaches and users to browse of all past updates without getting lost in programmer speak.",
     details: [
       { category: "feature", text: "Connected the footer's Beta version label directly to this modal, enabling users to click the version number to reveal a historical build ledger." },
-      { category: "feature", text: "Rewrote all automated system logs, replacing complicated technical terminology with simple, layman-friendly sports-dashboard descriptions to prioritize user clarity." }
+      { category: "feature", text: "Rewrote all automated system logs, replacing complicated technical terminology with simple, user-friendly sports-dashboard descriptions to prioritize user clarity." }
     ]
   },
   {
@@ -180,9 +192,6 @@ export default function BuildChangelogModal({ isOpen, onClose }: BuildChangelogM
                       // {build.codename}
                     </span>
                   </div>
-                  <span className="text-3xs font-mono text-white/30 uppercase">
-                    DEPLOYED: {build.date}
-                  </span>
                 </div>
 
                 {/* Build Details Container */}

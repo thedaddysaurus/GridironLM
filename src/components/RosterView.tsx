@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { RichRoster, Player } from "../types";
-import { Search, User2, Zap, Hourglass, Calendar, Shield, RefreshCw } from "lucide-react";
+import { Search, User2, Zap, Hourglass, Calendar, Shield, RefreshCw, BarChart3 as BarChartIcon } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // Deterministic performance trend generator to keep graphs stable and realistic per player
 function getPlayerPerformanceTrend(playerId: string, position: string) {
@@ -116,6 +117,35 @@ function PlayerSparkline({ playerId, position }: { playerId: string; position: s
     </div>
   );
 }
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#121110]/95 border border-white/10 rounded-xl p-3 shadow-2xl backdrop-blur-md">
+        <p className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest mb-2">{label}</p>
+        <div className="space-y-1.5">
+          {payload.map((entry: any, index: number) => {
+            return (
+              <div key={index} className="flex items-center justify-between gap-4 text-2xs">
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <span 
+                    className="w-1.5 h-1.5 rounded-full" 
+                    style={{ backgroundColor: entry.color || entry.fill }} 
+                  />
+                  {entry.name}:
+                </span>
+                <span className="font-mono font-bold text-white">
+                  {entry.value} {entry.value === 1 ? "Player" : "Players"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 interface RosterViewProps {
   roster: RichRoster;
@@ -248,6 +278,103 @@ export default function RosterView({
 
   // Compute active selected roster
   const activeRoster = rosters.find(r => r.roster_id === selectedRosterId) || rosters[0] || initialRoster;
+
+  // Compute age distribution of starting rosters dynamically
+  const getAgeDistributionData = () => {
+    const bins = [
+      { key: "under24", label: "23 & Under" },
+      { key: "24_25", label: "24 - 25" },
+      { key: "26_27", label: "26 - 27" },
+      { key: "28_29", label: "28 - 29" },
+      { key: "30_plus", label: "30 & Over" }
+    ];
+
+    const getBinKey = (age: number) => {
+      if (age <= 23) return "under24";
+      if (age <= 25) return "24_25";
+      if (age <= 27) return "26_27";
+      if (age <= 29) return "28_29";
+      return "30_plus";
+    };
+
+    const activeCounts = { under24: 0, "24_25": 0, "26_27": 0, "28_29": 0, "30_plus": 0 };
+    if (activeRoster && activeRoster.starters) {
+      activeRoster.starters.forEach((p) => {
+        if (p && p.id && typeof p.age === "number") {
+          const key = getBinKey(p.age);
+          activeCounts[key]++;
+        }
+      });
+    }
+
+    const leagueBinSums = { under24: 0, "24_25": 0, "26_27": 0, "28_29": 0, "30_plus": 0 };
+    const validRosters = rosters.filter(r => r && r.starters && r.starters.length > 0);
+    const rostersCount = validRosters.length || 1;
+
+    validRosters.forEach((r) => {
+      r.starters.forEach((p) => {
+        if (p && p.id && typeof p.age === "number") {
+          const key = getBinKey(p.age);
+          leagueBinSums[key]++;
+        }
+      });
+    });
+
+    return bins.map((bin) => {
+      const activeVal = activeCounts[bin.key as keyof typeof activeCounts];
+      const leagueSum = leagueBinSums[bin.key as keyof typeof leagueBinSums];
+      const leagueAvg = Number((leagueSum / rostersCount).toFixed(2));
+
+      return {
+        binName: bin.label,
+        "My Starters": activeVal,
+        "League Avg Starters": leagueAvg
+      };
+    });
+  };
+
+  const chartData = getAgeDistributionData();
+
+  // Compute key stats for side panel
+  let activeSum = 0;
+  let activeAgeCount = 0;
+  if (activeRoster && activeRoster.starters) {
+    activeRoster.starters.forEach((p) => {
+      if (p && p.id && typeof p.age === "number") {
+        activeSum += p.age;
+        activeAgeCount++;
+      }
+    });
+  }
+  const activeAvgAge = activeAgeCount > 0 ? (activeSum / activeAgeCount).toFixed(1) : "N/A";
+
+  let leagueSumAge = 0;
+  let leagueAgeCount = 0;
+  rosters.forEach((r) => {
+    if (r && r.starters) {
+      r.starters.forEach((p) => {
+        if (p && p.id && typeof p.age === "number") {
+          leagueSumAge += p.age;
+          leagueAgeCount++;
+        }
+      });
+    }
+  });
+  const leagueAvgAge = leagueAgeCount > 0 ? (leagueSumAge / leagueAgeCount).toFixed(1) : "N/A";
+
+  let diffText = "Even";
+  let diffColor = "text-slate-300";
+  if (activeAvgAge !== "N/A" && leagueAvgAge !== "N/A") {
+    const diff = Number(activeAvgAge) - Number(leagueAvgAge);
+    const formattedDiff = Math.abs(diff).toFixed(1);
+    if (diff < 0) {
+      diffText = `-${formattedDiff} Yrs (Younger)`;
+      diffColor = "text-[#00c176]";
+    } else if (diff > 0) {
+      diffText = `+${formattedDiff} Yrs (Older)`;
+      diffColor = "text-amber-400";
+    }
+  }
 
   // Helper: Get color classes by player position matching Sleeper's authentic solid designs
   const getPositionTag = (pos: string) => {
@@ -408,7 +535,8 @@ export default function RosterView({
           <p className="text-xs text-white/40 font-mono tracking-widest uppercase">Syncing Roster Ledger for {selectedSeason}...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="roster-layouts">
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="roster-layouts">
           
           {/* Starters Lineup Card */}
           <div className="space-y-4" id="starters-lineup">
@@ -558,7 +686,84 @@ export default function RosterView({
           </div>
 
         </div>
-      )}
+
+        {/* Age Distribution Analytics Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 md:p-6 shadow-xl shadow-black/10" id="roster-age-distribution">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
+            <div>
+              <h2 className="text-sm font-sans font-semibold text-white/80 flex items-center gap-2 uppercase tracking-wide">
+                <BarChartIcon className="text-[#ba8659]" size={16} />
+                Starter Age Distribution Analytics
+              </h2>
+              <p className="text-2xs text-white/40 font-sans mt-1">
+                Contrast current lineup longevity metrics against dynamic league-wide active averages
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-2xs font-mono">
+              <div className="border border-white/5 bg-[#121110]/30 rounded-xl px-3.5 py-2">
+                <span className="text-white/30 uppercase tracking-widest block text-[9px] mb-0.5">My Avg Age</span>
+                <span className="text-slate-200 font-bold text-xs">{activeAvgAge} Yrs</span>
+              </div>
+              <div className="border border-white/5 bg-[#121110]/30 rounded-xl px-3.5 py-2">
+                <span className="text-white/30 uppercase tracking-widest block text-[9px] mb-0.5">League Avg</span>
+                <span className="text-slate-200 font-bold text-xs">{leagueAvgAge} Yrs</span>
+              </div>
+              <div className="border border-white/5 bg-[#121110]/30 rounded-xl px-3.5 py-2">
+                <span className="text-white/30 uppercase tracking-widest block text-[9px] mb-0.5">Diff Context</span>
+                <span className={`font-bold text-xs ${diffColor}`}>{diffText}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Chart Container */}
+          <div className="h-72 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" vertical={false} />
+                <XAxis 
+                  dataKey="binName" 
+                  stroke="rgba(255, 255, 255, 0.4)" 
+                  fontSize={10} 
+                  fontFamily="monospace"
+                  tickLine={false}
+                  axisLine={{ stroke: 'rgba(255, 255, 255, 0.08)' }}
+                />
+                <YAxis 
+                  stroke="rgba(255, 255, 255, 0.4)" 
+                  fontSize={10} 
+                  fontFamily="monospace"
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.02)" }} />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36} 
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                />
+                <Bar 
+                  dataKey="My Starters" 
+                  fill="#ba8659" 
+                  radius={[4, 4, 0, 0]} 
+                />
+                <Bar 
+                  dataKey="League Avg Starters" 
+                  fill="#475569" 
+                  radius={[4, 4, 0, 0]} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
+    )}
     </div>
   );
 }

@@ -364,10 +364,10 @@ export default function App() {
                 Our pigskin intelligence is artificial.
               </div>
               <h2 className="text-4xl md:text-5xl font-athletic tracking-widest text-[#fcf9f5] uppercase" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
-                Unlock Your Gridiron Empire
+                Welcome to Gridiron LM
               </h2>
               <p className="text-xs md:text-sm text-slate-400 max-w-lg mx-auto font-sans leading-relaxed">
-                GRIDIRONLM parses your total Sleeper League history, active rosters, custom ratings, and weekly matchups. Built directly on live Sleeper API query layers.
+                Parse years of Sleeper history in seconds. GridironLM tracks every roster, matchup, and transaction so you can spot market inefficiencies and execute high-volume trades with confidence.
               </p>
             </div>
 
@@ -452,7 +452,7 @@ export default function App() {
                       Enter Username to Sync
                     </h3>
                     <p className="text-xs text-slate-400 font-sans">
-                      We'll fetch your active dynasty rosters, compile historical cross-league rollup statistics, and prepare live multi-season analytics.
+                      Enter your username to fetch your active dynasty rosters, compile historical cross-league rollup statistics, and prepare live multi-season analytics.
                     </p>
                   </div>
 
@@ -1024,7 +1024,7 @@ export default function App() {
               className="text-[#ba8659] hover:text-[#d4996a] duration-200 transition-colors underline underline-offset-4 font-bold cursor-pointer select-none focus:outline-none"
               title="View system release chronicle & automated diagnostic insights"
             >
-              BETA 1.6
+              BETA 1.7
             </button>
           </p>
         </div>

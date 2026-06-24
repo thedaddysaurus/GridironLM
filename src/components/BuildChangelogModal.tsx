@@ -24,10 +24,50 @@ interface BuildItem {
 
 const BUILD_LOG: BuildItem[] = [
   {
+    version: "BETA 2.0.1",
+    codename: "Playbook Vernacular Alignment",
+    date: "June 24, 2026",
+    isLatest: true,
+    title: "Leagues Terminology & Sub-Build Tracking",
+    tagline: "Aligned terminology from Playbook to Leagues and introduced sub-version release tracking.",
+    releaseInsight: "Updated cached sync indicators and action buttons across the pre-warmed dashboard to say 'Leagues Synced' and 'View Leagues' for better structural clarity. Established sub-build version protocols.",
+    details: [
+      { category: "feature", text: "Renamed 'PLAYBOOK SYNCED & CACHED' badge to 'LEAGUES SYNCED & CACHED' in the warming screen." },
+      { category: "feature", text: "Updated 'ENTER PLAYBOOK' action buttons to 'VIEW LEAGUES' and revised welcome copies." },
+      { category: "core", text: "Established the secondary-decimal sub-build update pattern for granular patch tracking." }
+    ]
+  },
+  {
+    version: "BETA 2.0",
+    codename: "Franchise Data Vault Harmony",
+    date: "June 24, 2026",
+    title: "Custom Vault Dropdowns & Responsive Ticker",
+    tagline: "Upgraded all core selection dropdowns to custom luxury designs and optimized the trending ticker for mobile viewports.",
+    releaseInsight: "Transformed standard native browser selectors across Season Context, Inspect Franchise, Select Season, and Historical Context views into custom-animated, high-contrast dropdown panels. Re-engineered the NFL Trending Ticker to layout cleanly on narrow screens by separating active filter buttons and scrolling items.",
+    details: [
+      { category: "feature", text: "Upgraded Season Context & Inspect Franchise selectors in Roster View to custom interactive dropdowns." },
+      { category: "feature", text: "Refactored Select Season in Standings View and Historical Context in History/Stats to match the premium design." },
+      { category: "fix", text: "Optimized NFL Trending Ticker layout for mobile devices by splitting controls and scroll tracks onto separate rows." },
+      { category: "core", text: "Completed seamless transition animation loops and dropdown click-away handling." }
+    ]
+  },
+  {
+    version: "BETA 1.9",
+    codename: "Mobile Viewport Harmony",
+    date: "June 23, 2026",
+    title: "Responsive Starting Lineups & Bench Lists",
+    tagline: "Optimized roster player slots to layout responsively and beautifully on mobile viewports.",
+    releaseInsight: "Fully redesigned the Starting Lineup list item layouts to flex vertically on narrow screens, ensuring long player names, sparklines, and status tags are beautifully contained and never clip or push past card boundaries.",
+    details: [
+      { category: "fix", text: "Introduced dynamic flex wrapping and vertical stacking on mobile for Starting Lineups." },
+      { category: "fix", text: "Enforced similar auto-stacking behavior on small-viewport Bench player cards." },
+      { category: "core", text: "Verified zero-overflow boundaries on viewports under 400px width." }
+    ]
+  },
+  {
     version: "BETA 1.8",
     codename: "Clean Canvas & Layout Precision",
     date: "June 22, 2026",
-    isLatest: true,
     title: "Optimized Roster Layout & Clean System Footer",
     tagline: "Improved table alignment, contained sparklines, and polished branding alignment.",
     releaseInsight: "Optimized the Bench & Depth roster grids to provide clean sparkline clipping and fluid responsive limits on larger displays. Streamlined the global layout by stripping out unnecessary technical diagnostic outputs and aligning visual titles with professional naming standards.",

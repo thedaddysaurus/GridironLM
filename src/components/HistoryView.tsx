@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Trophy, History, ShieldAlert, Award, Calendar, RefreshCw, BarChart3, Users2, Shield, HeartCrack, Flame, Compass } from "lucide-react";
+import { Trophy, History, ShieldAlert, Award, Calendar, RefreshCw, BarChart3, Users2, Shield, HeartCrack, Flame, Compass, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface HistoryViewProps {
   leagueId: string;
@@ -47,6 +48,7 @@ export default function HistoryView({ leagueId, userRosterId }: HistoryViewProps
   const [seasons, setSeasons] = useState<HistoricalSeason[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedHistoricalSeason, setSelectedHistoricalSeason] = useState<string>("ALL");
+  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function fetchHistory() {
@@ -116,21 +118,68 @@ export default function HistoryView({ leagueId, userRosterId }: HistoryViewProps
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <Calendar size={14} className="text-purple-400" />
           <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Historical Context:</span>
-          <select
-            value={selectedHistoricalSeason}
-            onChange={(e) => setSelectedHistoricalSeason(e.target.value)}
-            className="bg-[#09090b]/95 text-slate-100 border border-purple-500/30 rounded-lg px-2.5 py-1.5 text-2xs font-mono font-bold focus:outline-none focus:border-purple-400 cursor-pointer shadow-lg shadow-black/20"
-          >
-            <option value="ALL">ALL-TIME LEADERBOARD</option>
-            {seasons.map((s) => (
-              <option key={s.leagueId} value={s.season}>
-                {s.season} SEASON INSIGHTS
-              </option>
-            ))}
-          </select>
+          <div className="relative inline-block w-52 z-30" id="historical-context-dropdown-container">
+            <button
+              type="button"
+              onClick={() => setHistoryDropdownOpen(!historyDropdownOpen)}
+              className="w-full inline-flex justify-between items-center gap-2.5 px-3.5 py-2 border border-purple-500/30 rounded-xl bg-[#090b0a] text-2xs font-sans font-semibold tracking-wide uppercase text-[#fcf9f5] shadow-xl hover:bg-slate-900 focus:outline-none cursor-pointer transition-all"
+            >
+              <span className="truncate">
+                {selectedHistoricalSeason === "ALL" ? "ALL-TIME LEADERBOARD" : `${selectedHistoricalSeason} SEASON INSIGHTS`}
+              </span>
+              <ChevronDown size={12} className={`text-purple-400 transition-transform duration-200 ${historyDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            <AnimatePresence>
+              {historyDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setHistoryDropdownOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute right-0 mt-2 w-full rounded-xl bg-[#090b0a] border border-purple-500/20 shadow-2xl z-20 overflow-hidden backdrop-blur-xl"
+                  >
+                    <div className="p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setSelectedHistoricalSeason("ALL");
+                          setHistoryDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 text-3xs font-sans font-semibold rounded-lg text-left transition-all cursor-pointer ${
+                          selectedHistoricalSeason === "ALL"
+                            ? "bg-white/10 text-white"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        ALL-TIME LEADERBOARD
+                      </button>
+                      {seasons.map((s) => (
+                        <button
+                          key={s.leagueId}
+                          onClick={() => {
+                            setSelectedHistoricalSeason(s.season);
+                            setHistoryDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-1.5 text-3xs font-sans font-semibold rounded-lg text-left transition-all cursor-pointer ${
+                            selectedHistoricalSeason === s.season
+                              ? "bg-white/10 text-white"
+                              : "text-white/60 hover:text-white hover:bg-white/5"
+                          }`}
+                        >
+                          {s.season} SEASON INSIGHTS
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 

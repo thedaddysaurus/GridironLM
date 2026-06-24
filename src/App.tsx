@@ -394,7 +394,7 @@ export default function App() {
                       )}
                       <div>
                         <div className="inline-block px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-3xs font-mono tracking-widest uppercase mb-1">
-                          Playbook Synced & Cached
+                          Leagues Synced & Cached
                         </div>
                         <h3 className="text-2xl font-athletic tracking-wider text-[#fcf9f5] uppercase">
                           @{activeUsername}
@@ -405,7 +405,7 @@ export default function App() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-400 font-sans leading-normal">
-                      GRIDIRONLM is warmed up. Click entering your playbook to restore active rosters, matchups, and lifetime ledger rolling calculations instantly without redundant API loads.
+                      Gridiron LM is now warmed up. Simply click on “View Leagues” to instantly restore active rosters, matchups, and lifetime ledger rolling calculations without the need for redundant API loads.
                     </p>
                   </div>
 
@@ -419,7 +419,7 @@ export default function App() {
                       className="w-full py-4 bg-[#ba8659] hover:bg-[#a27248] text-xs font-athletic tracking-widest uppercase rounded-xl text-white shadow-xl transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2 border border-white/10"
                     >
                       <Zap size={14} className="fill-white" />
-                      Enter Playbook
+                      View Leagues
                     </button>
                     
                     <button
@@ -1004,7 +1004,7 @@ export default function App() {
               className="text-[#ba8659] hover:text-[#d4996a] duration-200 transition-colors underline underline-offset-4 font-bold cursor-pointer select-none focus:outline-none"
               title="View system release chronicle & automated diagnostic insights"
             >
-              BETA 1.8
+              BETA 2.0.1
             </button>
           </p>
         </div>

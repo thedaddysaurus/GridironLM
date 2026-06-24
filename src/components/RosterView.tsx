@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { RichRoster, Player } from "../types";
-import { Search, User2, Zap, Hourglass, Calendar, Shield, RefreshCw, BarChart3 as BarChartIcon } from "lucide-react";
+import { Search, User2, Zap, Hourglass, Calendar, Shield, RefreshCw, ChevronDown, BarChart3 as BarChartIcon } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // Deterministic performance trend generator to keep graphs stable and realistic per player
@@ -179,6 +180,10 @@ export default function RosterView({
   const [selectedSeason, setSelectedSeason] = useState<string>(currentSeason);
   const [loadingSeasons, setLoadingSeasons] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // Custom Dropdowns open state
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+  const [franchiseDropdownOpen, setFranchiseDropdownOpen] = useState(false);
 
   // Roster rendering configurations
   const [rosters, setRosters] = useState<RichRoster[]>(initialAllRosters.length > 0 ? initialAllRosters : [initialRoster]);
@@ -472,33 +477,70 @@ export default function RosterView({
 
   return (
     <div className="space-y-6 animate-fadeIn" id="roster-view-container">
-      
-      {/* Dual Selector Header: Season Select + Franchise Select */}
-      <div className="bg-[#121110]/50 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+         {/* Dual Selector Header: Season Select + Franchise Select */}
+      <div className="bg-[#121110]/50 border border-white/5 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         
         {/* Season choosing dropdown */}
-        <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-[#ba8659]" />
-          <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Season Context:</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 relative">
+          <div className="flex items-center gap-2">
+            <Calendar size={14} className="text-[#ba8659]" />
+            <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Season Context:</span>
+          </div>
           {loadingSeasons ? (
             <div className="w-24 h-7 bg-white/5 animate-pulse rounded border border-white/10" />
           ) : seasons.length > 0 ? (
-            <select
-              value={selectedLeagueId}
-              onChange={(e) => {
-                const s = seasons.find(se => se.leagueId === e.target.value);
-                if (s) {
-                  handleSeasonChange(s.leagueId, s.season);
-                }
-              }}
-              className="bg-[#09090b]/95 text-slate-100 border border-[#ba8659]/30 rounded-lg px-2.5 py-1 text-2xs font-mono font-bold focus:outline-none focus:border-[#ba8659] cursor-pointer"
-            >
-              {seasons.map((s) => (
-                <option key={s.leagueId} value={s.leagueId}>
-                  {s.season} {s.season === currentSeason ? "(Active)" : ""}
-                </option>
-              ))}
-            </select>
+            <div className="relative inline-block w-full sm:w-48 z-30" id="season-context-dropdown-container">
+              <button
+                type="button"
+                onClick={() => {
+                  setSeasonDropdownOpen(!seasonDropdownOpen);
+                  setFranchiseDropdownOpen(false);
+                }}
+                className="w-full inline-flex justify-between items-center gap-2.5 px-3.5 py-2 border border-[#ba8659]/30 rounded-xl bg-[#090b0a] text-2xs font-sans font-semibold tracking-wide uppercase text-[#fcf9f5] shadow-xl hover:bg-slate-900 focus:outline-none cursor-pointer transition-all"
+              >
+                <span className="truncate">
+                  {seasons.find(s => s.leagueId === selectedLeagueId)?.season || selectedSeason} {seasons.find(s => s.leagueId === selectedLeagueId)?.season === currentSeason ? "(Active)" : ""}
+                </span>
+                <ChevronDown size={12} className={`text-[#ba8659] transition-transform duration-200 ${seasonDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {seasonDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setSeasonDropdownOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.12 }}
+                      className="absolute left-0 mt-2 w-full rounded-xl bg-[#090b0a] border border-[#ba8659]/20 shadow-2xl z-20 overflow-hidden backdrop-blur-xl"
+                    >
+                      <div className="p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
+                        {seasons.map((s) => (
+                          <button
+                            key={s.leagueId}
+                            onClick={() => {
+                              handleSeasonChange(s.leagueId, s.season);
+                              setSeasonDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-3xs font-sans font-semibold rounded-lg text-left transition-all cursor-pointer ${
+                              selectedLeagueId === s.leagueId
+                                ? "bg-white/10 text-white"
+                                : "text-white/60 hover:text-white hover:bg-white/5"
+                            }`}
+                          >
+                            <span>{s.season} SEASON</span>
+                            {s.season === currentSeason && (
+                              <span className="text-[9px] text-[#ba8659] bg-[#ba8659]/10 px-1 py-0.5 rounded uppercase tracking-widest font-bold scale-90">Active</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
             <span className="text-2xs font-mono font-semibold text-slate-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
               {currentSeason}
@@ -507,23 +549,67 @@ export default function RosterView({
         </div>
 
         {/* Franchise / Team inspecting selector */}
-        <div className="flex items-center gap-2">
-          <Shield size={14} className="text-[#ba8659]" />
-          <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Inspect Franchise:</span>
-          <select
-            value={selectedRosterId}
-            onChange={(e) => setSelectedRosterId(Number(e.target.value))}
-            className="bg-[#09090b]/95 text-slate-100 border border-[#ba8659]/30 rounded-lg px-2.5 py-1 text-2xs font-mono font-bold focus:outline-none focus:border-[#ba8659] cursor-pointer max-w-[200px] truncate"
-          >
-            {rosters.map((r) => {
-              const matchesUser = ownerId && r.owner_id === ownerId;
-              return (
-                <option key={r.roster_id} value={r.roster_id}>
-                  {r.ownerDetails?.team_name || `Roster ${r.roster_id}`} {matchesUser ? "(Mine)" : ""}
-                </option>
-              );
-            })}
-          </select>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 relative">
+          <div className="flex items-center gap-2">
+            <Shield size={14} className="text-[#ba8659]" />
+            <span className="text-2xs font-mono text-white/40 uppercase tracking-wider">Inspect Franchise:</span>
+          </div>
+          <div className="relative inline-block w-full sm:w-64 z-20" id="franchise-inspect-dropdown-container">
+            <button
+              type="button"
+              onClick={() => {
+                setFranchiseDropdownOpen(!franchiseDropdownOpen);
+                setSeasonDropdownOpen(false);
+              }}
+              className="w-full inline-flex justify-between items-center gap-2.5 px-3.5 py-2 border border-[#ba8659]/30 rounded-xl bg-[#090b0a] text-2xs font-sans font-semibold tracking-wide uppercase text-[#fcf9f5] shadow-xl hover:bg-slate-900 focus:outline-none cursor-pointer transition-all"
+            >
+              <span className="truncate">
+                {rosters.find(r => r.roster_id === selectedRosterId)?.ownerDetails?.team_name || `Roster ${selectedRosterId}`} {ownerId && rosters.find(r => r.roster_id === selectedRosterId)?.owner_id === ownerId ? "(Mine)" : ""}
+              </span>
+              <ChevronDown size={12} className={`text-[#ba8659] transition-transform duration-200 ${franchiseDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            <AnimatePresence>
+              {franchiseDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setFranchiseDropdownOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute right-0 mt-2 w-full rounded-xl bg-[#090b0a] border border-[#ba8659]/20 shadow-2xl z-20 overflow-hidden backdrop-blur-xl"
+                  >
+                    <div className="p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
+                      {rosters.map((r) => {
+                        const matchesUser = ownerId && r.owner_id === ownerId;
+                        const isSelected = selectedRosterId === r.roster_id;
+                        return (
+                          <button
+                            key={r.roster_id}
+                            onClick={() => {
+                              setSelectedRosterId(r.roster_id);
+                              setFranchiseDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-3xs font-sans font-semibold rounded-lg text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-white/10 text-white"
+                                : "text-white/60 hover:text-white hover:bg-white/5"
+                            }`}
+                          >
+                            <span className="truncate max-w-[160px]">{r.ownerDetails?.team_name || `Roster ${r.roster_id}`}</span>
+                            {matchesUser && (
+                              <span className="text-[9px] text-[#ba8659] bg-[#ba8659]/10 px-1 py-0.5 rounded uppercase tracking-widest font-bold scale-90 shrink-0">Mine</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -558,29 +644,31 @@ export default function RosterView({
                 return (
                   <div
                     key={index}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-3.5 gap-3 sm:gap-4 rounded-xl border transition-all duration-200 ${
                       hasP 
                         ? "bg-white/2 border-white/5 hover:bg-white/5" 
                         : "bg-white/1 border-white/5 border-dashed"
                     }`}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       {/* Position Label Display */}
-                      <span className="w-14 text-center text-[10px] font-mono font-black tracking-widest px-2 py-1 rounded bg-white/5 text-white/70 uppercase border border-white/5">
+                      <span className="w-12 sm:w-14 shrink-0 text-center text-[10px] font-mono font-black tracking-widest px-1.5 sm:px-2 py-1 rounded bg-white/5 text-white/70 uppercase border border-white/5">
                         {slot.positionLabel === "SUPER_FLEX" ? "SF" : slot.positionLabel}
                       </span>
 
                       {hasP ? (
-                        <div className="flex items-center gap-3">
-                          <PlayerAvatar player={p} />
-                          <div>
-                            <p className="text-sm font-sans font-semibold text-slate-200">{p.full_name}</p>
-                            <div className="flex items-center gap-2 text-2xs text-white/40 font-sans mt-0.5">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="shrink-0">
+                            <PlayerAvatar player={p} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-sans font-semibold text-slate-200 truncate pr-1">{p.full_name}</p>
+                            <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[10px] sm:text-2xs text-white/40 font-sans mt-0.5">
                               <span className="font-semibold text-slate-300">{p.team || "FA"}</span>
                               <span>•</span>
                               <span>Age {p.age || "N/A"}</span>
-                              <span>•</span>
-                              <span>{p.years_exp ? `${p.years_exp} Yrs Exp` : "Rookie"}</span>
+                              <span className="hidden xs:inline">•</span>
+                              <span className="hidden xs:inline">{p.years_exp ? `${p.years_exp} Yrs` : "Rook"}</span>
                             </div>
                           </div>
                         </div>
@@ -590,11 +678,16 @@ export default function RosterView({
                     </div>
 
                     {hasP && (
-                      <div className="flex items-center gap-3">
-                        <PlayerSparkline playerId={p.id} position={p.position} />
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
-                          {p.position}
-                        </span>
+                      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t border-white/5 pt-2 sm:pt-0 sm:border-0 shrink-0">
+                        <div className="block sm:hidden text-2xs text-white/30 font-sans">
+                          {p.years_exp ? `${p.years_exp} Yrs Exp` : "Rookie"}
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <PlayerSparkline playerId={p.id} position={p.position} />
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
+                            {p.position}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -654,12 +747,14 @@ export default function RosterView({
                   filteredBench.map((p) => (
                     <div
                       key={p.id}
-                      className="flex justify-between items-center p-3 rounded-xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all duration-200"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 rounded-xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all duration-200 min-w-0"
                     >
-                      <div className="flex items-center gap-3">
-                        <PlayerAvatar player={p} />
-                        <div>
-                          <p className="text-xs font-semibold text-slate-200 truncate max-w-[150px]">{p.full_name}</p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="shrink-0">
+                          <PlayerAvatar player={p} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-200 truncate pr-1">{p.full_name}</p>
                           <p className="text-[10px] text-white/40 font-mono mt-0.5">
                             <span className="font-bold text-white/65">{p.team || "FA"}</span>
                             {" • "}
@@ -668,11 +763,16 @@ export default function RosterView({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <PlayerSparkline playerId={p.id} position={p.position} />
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
-                          {p.position}
-                        </span>
+                      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t border-white/5 pt-2 sm:pt-0 sm:border-0 shrink-0">
+                        <div className="block sm:hidden text-2xs text-white/30 font-sans">
+                          Bench
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <PlayerSparkline playerId={p.id} position={p.position} />
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${getPositionTag(p.position)}`}>
+                            {p.position}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))

@@ -390,28 +390,55 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
   const userQueryId = req.query.userId as string || "";
 
   if (leagueId.startsWith("demo_league_")) {
-    const demoLeaguesInfo: Record<string, { name: string; userPlayers: string[]; otherPlayers: string[] }> = {
+    const demoLeaguesInfo: Record<string, {
+      name: string;
+      rosterPositions: string[];
+      userStarters: string[];
+      userBench: string[];
+      otherStarters: string[];
+      otherBench: string[];
+    }> = {
       demo_league_1: {
         name: "Apex Dynasty Pro 2026",
-        userPlayers: ["4046", "8183", "9531", "6794", "8112", "9493"],
-        otherPlayers: ["4866", "7564", "11521", "7848", "9484"]
+        rosterPositions: ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN"],
+        userStarters: ["4984", "8155", "9221", "6794", "7547", "10859", "8112", "9493"], // Josh Allen, Breece, Jahmyr Gibbs, Justin Jefferson, Amon-Ra, Sam LaPorta, Drake London, Puka Nacua
+        userBench: ["8183", "4866", "9509", "8146", "11628", "11632", "10236", "7553", "8150", "7569"], // Purdy, Saquon, Bijan, Garrett Wilson, MHJ, Malik Nabers, Dalton Kincaid, Kyle Pitts, Kyren Williams, Nico Collins
+        otherStarters: ["4046", "6813", "8150", "7564", "6803", "4217", "5872", "7526"], // Mahomes, Jonathan Taylor, Kyren, Ja'Marr, Brandon Aiyuk, George Kittle, Deebo, Jaylen Waddle
+        otherBench: ["6768", "1466", "5012", "8130"] // Tua, Travis Kelce, Mark Andrews, Trey McBride
       },
       demo_league_2: {
         name: "Superflex Empire Dynasty",
-        userPlayers: ["4866", "8183", "7564", "8112", "11521", "9484"],
-        otherPlayers: ["4046", "9531", "6794", "9493", "7848"]
+        rosterPositions: ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "SUPER_FLEX", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN"],
+        userStarters: ["4881", "9509", "4866", "6786", "7564", "8130", "8146", "8112", "6904"], // Lamar, Bijan, Saquon, CeeDee, Ja'Marr, Trey McBride, Garrett Wilson, Drake London, Jalen Hurts
+        userBench: ["6768", "9221", "11632", "9493", "11628", "10859", "10236", "8150", "7569", "1466"], // Tua, Gibbs, Malik Nabers, Puka, MHJ, Sam LaPorta, Dalton Kincaid, Kyren, Nico, Kelce
+        otherStarters: ["4984", "8155", "6813", "6794", "7547", "4217", "6803", "5872", "4046"], // Josh Allen, Breece, JT, Jefferson, Amon-Ra, Kittle, Aiyuk, Deebo, Mahomes
+        otherBench: ["8183", "5012", "7553", "7526"]
       },
       demo_league_3: {
         name: "Gridiron Overlords Dynasty",
-        userPlayers: ["4046", "9488", "9531", "6794", "11521", "9493", "7848"],
-        otherPlayers: ["4866", "8183", "7564", "8112", "9484"]
+        rosterPositions: ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "FLEX", "FLEX", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN"],
+        userStarters: ["4046", "8155", "9509", "6794", "6786", "7547", "5012", "7564", "8146"], // Mahomes, Breece, Bijan, Jefferson, CeeDee, Amon-Ra, Mark Andrews, Ja'Marr, Garrett Wilson
+        userBench: ["8183", "4866", "9221", "8112", "9493", "8130", "7553", "8150", "7569", "6813"], // Purdy, Saquon, Gibbs, London, Puka, Trey McBride, Kyle Pitts, Kyren, Nico, JT
+        otherStarters: ["4984", "8150", "6813", "11628", "11632", "6803", "10859", "5872", "7526"], // Josh Allen, Kyren, JT, MHJ, Nabers, Aiyuk, LaPorta, Deebo, Waddle
+        otherBench: ["6904", "6768", "1466", "10236"]
       }
     };
 
     const targetInfo = demoLeaguesInfo[leagueId] || demoLeaguesInfo.demo_league_1;
 
     // Resolve user players
-    const userPlayersRes = targetInfo.userPlayers.map(id => resolvePlayer(id));
+    const userStartersRes = targetInfo.userStarters.map(id => resolvePlayer(id));
+    const userBenchRes = targetInfo.userBench.map(id => resolvePlayer(id));
+    const userPlayersRes = [...userStartersRes, ...userBenchRes];
+
+    const startersIdsWithPoints: Record<string, number> = {};
+    const defaultPoints = [26.4, 21.8, 18.2, 23.5, 19.1, 15.6, 14.8, 16.2, 20.4, 15.0];
+    targetInfo.userStarters.forEach((id, idx) => {
+      startersIdsWithPoints[id] = defaultPoints[idx] || 12.0;
+    });
+
+    const pointsThisWeek = Math.round(Object.values(startersIdsWithPoints).reduce((a, b) => a + b, 0) * 10) / 10;
+
     const userRoster: any = {
       roster_id: 1,
       owner_id: "demo_99999",
@@ -432,16 +459,11 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
         team_name: "Sleeper Demo Star"
       },
       players: userPlayersRes,
-      starters: userPlayersRes.slice(0, 4),
-      bench: userPlayersRes.slice(4),
-      pointsThisWeek: 136.5,
+      starters: userStartersRes,
+      bench: userBenchRes,
+      pointsThisWeek,
       matchupId: 1,
-      startersIdsWithPoints: {
-        [targetInfo.userPlayers[0] || ""]: 24.5,
-        [targetInfo.userPlayers[1] || ""]: 18.2,
-        [targetInfo.userPlayers[2] || ""]: 16.8,
-        [targetInfo.userPlayers[3] || ""]: 22.1
-      }
+      startersIdsWithPoints
     };
 
     const standings: any[] = [userRoster];
@@ -455,7 +477,10 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
 
     otherOwners.forEach((owner, idx) => {
       const rosterId = idx + 2;
-      const otherPlayersRes = targetInfo.otherPlayers.map(id => resolvePlayer(id));
+      const otherStartersRes = targetInfo.otherStarters.map(id => resolvePlayer(id));
+      const otherBenchRes = targetInfo.otherBench.map(id => resolvePlayer(id));
+      const otherPlayersRes = [...otherStartersRes, ...otherBenchRes];
+
       standings.push({
         roster_id: rosterId,
         owner_id: owner.id,
@@ -476,8 +501,8 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
           team_name: owner.team
         },
         players: otherPlayersRes,
-        starters: otherPlayersRes.slice(0, 3),
-        bench: otherPlayersRes.slice(3),
+        starters: otherStartersRes,
+        bench: otherBenchRes,
         pointsThisWeek: 112.5,
         matchupId: rosterId === 2 ? 1 : null,
         startersIdsWithPoints: {}
@@ -490,6 +515,9 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
       }
       return b.settings.fpts + b.settings.fpts_decimal * 0.01 - (a.settings.fpts + a.settings.fpts_decimal * 0.01);
     });
+
+    const otherStartersPoints = [22.8, 17.5, 19.2, 24.1, 15.2, 11.4, 13.6, 12.8, 18.5];
+    const otherPointsThisWeek = Math.round(otherStartersPoints.slice(0, targetInfo.otherStarters.length).reduce((a, b) => a + b, 0) * 10) / 10;
 
     return res.json({
       leagueId,
@@ -510,7 +538,7 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
               username: "SleeperDemo",
               avatar: null,
               owner_id: "demo_99999",
-              points: 136.5
+              points: pointsThisWeek
             },
             {
               roster_id: 2,
@@ -518,12 +546,12 @@ app.get("/api/sleeper/league/:leagueId", async (req, res) => {
               username: "Megatron9",
               avatar: null,
               owner_id: "demo_owner_2",
-              points: 121.2
+              points: otherPointsThisWeek
             }
           ]
         }
       ],
-      rosterPositions: ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "BN", "BN", "BN", "BN"]
+      rosterPositions: targetInfo.rosterPositions
     });
   }
 
@@ -1094,6 +1122,158 @@ app.get("/api/sleeper/league/:leagueId/history", async (req, res) => {
 // API: Detailed transactions (waiver, trades, free agency) for a league
 app.get("/api/sleeper/league/:leagueId/transactions", async (req, res) => {
   const { leagueId } = req.params;
+
+  if (leagueId.startsWith("demo_league_")) {
+    const owners = [
+      { rosterId: 1, displayName: "SleeperDemo", teamName: "Sleeper Demo Star", avatar: null, userId: "demo_99999" },
+      { rosterId: 2, displayName: "Megatron9", teamName: "Megatron's Revenge", avatar: null, userId: "demo_owner_2" },
+      { rosterId: 3, displayName: "BradyGoat", teamName: "Tom's TB12", avatar: null, userId: "demo_owner_3" },
+      { rosterId: 4, displayName: "RunCmc", teamName: "Christian Soldiers", avatar: null, userId: "demo_owner_4" },
+      { rosterId: 5, displayName: "TyreekFreak", teamName: "Cheetah Sprint", avatar: null, userId: "demo_owner_5" },
+      { rosterId: 6, displayName: "LambSauce", teamName: "CeeDee's Diner", avatar: null, userId: "demo_owner_6" }
+    ];
+
+    const transactions: any[] = [];
+
+    // Add corresponding trade
+    if (leagueId === "demo_league_1") {
+      transactions.push({
+        transaction_id: "demo_t_1",
+        type: "trade",
+        status: "complete",
+        created: Date.now() - 5 * 24 * 60 * 60 * 1000,
+        status_updated: Date.now() - 5 * 24 * 60 * 60 * 1000,
+        week: 1,
+        roster_ids: [1, 3],
+        richAdds: [
+          { player: resolvePlayer("8112"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("11632"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("7547"), rosterId: 3, ownerName: "BradyGoat", teamName: "Tom's TB12", userId: "demo_owner_3" }
+        ],
+        richDrops: [
+          { player: resolvePlayer("7547"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("8112"), rosterId: 3, ownerName: "BradyGoat", teamName: "Tom's TB12", userId: "demo_owner_3" },
+          { player: resolvePlayer("11632"), rosterId: 3, ownerName: "BradyGoat", teamName: "Tom's TB12", userId: "demo_owner_3" }
+        ],
+        richDraftPicks: []
+      });
+    } else if (leagueId === "demo_league_2") {
+      transactions.push({
+        transaction_id: "demo_t_2",
+        type: "trade",
+        status: "complete",
+        created: Date.now() - 2 * 24 * 60 * 60 * 1000,
+        status_updated: Date.now() - 2 * 24 * 60 * 60 * 1000,
+        week: 1,
+        roster_ids: [1, 2],
+        richAdds: [
+          { player: resolvePlayer("6904"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("6768"), rosterId: 2, ownerName: "Megatron9", teamName: "Megatron's Revenge", userId: "demo_owner_2" },
+          { player: resolvePlayer("4866"), rosterId: 2, ownerName: "Megatron9", teamName: "Megatron's Revenge", userId: "demo_owner_2" }
+        ],
+        richDrops: [
+          { player: resolvePlayer("6768"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("4866"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("6904"), rosterId: 2, ownerName: "Megatron9", teamName: "Megatron's Revenge", userId: "demo_owner_2" }
+        ],
+        richDraftPicks: [
+          {
+            season: "2027", round: 1, receiverRosterId: 1, receiverName: "SleeperDemo", receiverTeam: "Sleeper Demo Star",
+            senderRosterId: 2, senderName: "Megatron9", senderTeam: "Megatron's Revenge", originalOwnerRosterId: 2, originalOwnerName: "Megatron9", originalOwnerTeam: "Megatron's Revenge"
+          },
+          {
+            season: "2027", round: 2, receiverRosterId: 2, receiverName: "Megatron9", receiverTeam: "Megatron's Revenge",
+            senderRosterId: 1, senderName: "SleeperDemo", senderTeam: "Sleeper Demo Star", originalOwnerRosterId: 1, originalOwnerName: "SleeperDemo", originalOwnerTeam: "Sleeper Demo Star"
+          }
+        ]
+      });
+    } else if (leagueId === "demo_league_3") {
+      transactions.push({
+        transaction_id: "demo_t_3",
+        type: "trade",
+        status: "complete",
+        created: Date.now() - 9 * 24 * 60 * 60 * 1000,
+        status_updated: Date.now() - 9 * 24 * 60 * 60 * 1000,
+        week: 1,
+        roster_ids: [1, 4],
+        richAdds: [
+          { player: resolvePlayer("10859"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("7553"), rosterId: 4, ownerName: "RunCmc", teamName: "Christian Soldiers", userId: "demo_owner_4" }
+        ],
+        richDrops: [
+          { player: resolvePlayer("7553"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" },
+          { player: resolvePlayer("10859"), rosterId: 4, ownerName: "RunCmc", teamName: "Christian Soldiers", userId: "demo_owner_4" }
+        ],
+        richDraftPicks: [
+          {
+            season: "2026", round: 3, receiverRosterId: 4, receiverName: "RunCmc", receiverTeam: "Christian Soldiers",
+            senderRosterId: 1, senderName: "SleeperDemo", senderTeam: "Sleeper Demo Star", originalOwnerRosterId: 1, originalOwnerName: "SleeperDemo", originalOwnerTeam: "Sleeper Demo Star"
+          }
+        ]
+      });
+    }
+
+    // Add Waiver Wire Picks
+    transactions.push({
+      transaction_id: "demo_w_1",
+      type: "waiver",
+      status: "complete",
+      created: Date.now() - 4 * 24 * 60 * 60 * 1000,
+      status_updated: Date.now() - 4 * 24 * 60 * 60 * 1000,
+      week: 1,
+      roster_ids: [1],
+      waiver_budget: [{ roster_id: 1, budget: 45 }],
+      richAdds: [
+        { player: resolvePlayer("8150"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" } // Kyren Williams
+      ],
+      richDrops: [],
+      richDraftPicks: []
+    });
+
+    transactions.push({
+      transaction_id: "demo_w_2",
+      type: "waiver",
+      status: "complete",
+      created: Date.now() - 4 * 24 * 60 * 60 * 1000,
+      status_updated: Date.now() - 4 * 24 * 60 * 60 * 1000,
+      week: 1,
+      roster_ids: [3],
+      waiver_budget: [{ roster_id: 3, budget: 15 }],
+      richAdds: [
+        { player: resolvePlayer("7569"), rosterId: 3, ownerName: "BradyGoat", teamName: "Tom's TB12", userId: "demo_owner_3" } // Nico Collins
+      ],
+      richDrops: [],
+      richDraftPicks: []
+    });
+
+    // Add Free Agent Pickups
+    transactions.push({
+      transaction_id: "demo_f_1",
+      type: "free_agent",
+      status: "complete",
+      created: Date.now() - 1 * 24 * 60 * 60 * 1000,
+      status_updated: Date.now() - 1 * 24 * 60 * 60 * 1000,
+      week: 1,
+      roster_ids: [1],
+      richAdds: [
+        { player: resolvePlayer("10236"), rosterId: 1, ownerName: "SleeperDemo", teamName: "Sleeper Demo Star", userId: "demo_99999" } // Dalton Kincaid
+      ],
+      richDrops: [],
+      richDraftPicks: []
+    });
+
+    return res.json({
+      transactions,
+      owners: owners.map(o => ({
+        rosterId: o.rosterId,
+        displayName: o.displayName,
+        teamName: o.teamName,
+        avatar: o.avatar,
+        userId: o.userId
+      }))
+    });
+  }
+
   try {
     const rostersUrl = `https://api.sleeper.app/v1/league/${leagueId}/rosters`;
     const usersUrl = `https://api.sleeper.app/v1/league/${leagueId}/users`;
@@ -1234,58 +1414,141 @@ app.get("/api/sleeper/user/:userId/recent-trades", async (req, res) => {
       trades: [
         {
           "transaction_id": "demo_trade_1",
-          "leagueName": "Apex Dynasty Pro 2026",
-          "leagueId": "demo_league_1",
+          "leagueName": "Superflex Empire Dynasty",
+          "leagueId": "demo_league_2",
           "season": "2026",
           "type": "trade",
           "status": "complete",
-          "created": Date.now() - 3 * 24 * 60 * 60 * 1000,
-          "status_updated": Date.now() - 3 * 24 * 60 * 60 * 1000,
+          "created": Date.now() - 2 * 24 * 60 * 60 * 1000,
+          "status_updated": Date.now() - 2 * 24 * 60 * 60 * 1000,
           "week": 1,
           "roster_ids": [1, 2],
           "richAdds": [
             {
-              "player": resolvePlayer("8183"),
+              "player": resolvePlayer("6904"), // Jalen Hurts (QB)
               "rosterId": 1,
               "ownerName": "SleeperDemo",
               "teamName": "Sleeper Demo Star",
               "userId": "demo_99999"
-            }
-          ],
-          "richDrops": [
+            },
             {
-              "player": resolvePlayer("4046"),
+              "player": resolvePlayer("6768"), // Tua Tagovailoa (QB)
+              "rosterId": 2,
+              "ownerName": "Megatron9",
+              "teamName": "Megatron's Revenge",
+              "userId": "demo_owner_2"
+            },
+            {
+              "player": resolvePlayer("4866"), // Saquon Barkley (RB)
               "rosterId": 2,
               "ownerName": "Megatron9",
               "teamName": "Megatron's Revenge",
               "userId": "demo_owner_2"
             }
           ],
-          "richDraftPicks": []
-        },
-        {
-          "transaction_id": "demo_trade_2",
-          "leagueName": "Superflex Empire Dynasty",
-          "leagueId": "demo_league_2",
-          "season": "2026",
-          "type": "trade",
-          "status": "complete",
-          "created": Date.now() - 10 * 24 * 60 * 60 * 1000,
-          "status_updated": Date.now() - 10 * 24 * 60 * 60 * 1000,
-          "week": 1,
-          "roster_ids": [1, 3],
-          "richAdds": [
+          "richDrops": [
             {
-              "player": resolvePlayer("7564"),
+              "player": resolvePlayer("6768"),
               "rosterId": 1,
               "ownerName": "SleeperDemo",
               "teamName": "Sleeper Demo Star",
               "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("4866"),
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("6904"),
+              "rosterId": 2,
+              "ownerName": "Megatron9",
+              "teamName": "Megatron's Revenge",
+              "userId": "demo_owner_2"
+            }
+          ],
+          "richDraftPicks": [
+            {
+              "season": "2027",
+              "round": 1,
+              "receiverRosterId": 1,
+              "receiverName": "SleeperDemo",
+              "receiverTeam": "Sleeper Demo Star",
+              "senderRosterId": 2,
+              "senderName": "Megatron9",
+              "senderTeam": "Megatron's Revenge",
+              "originalOwnerRosterId": 2,
+              "originalOwnerName": "Megatron9",
+              "originalOwnerTeam": "Megatron's Revenge"
+            },
+            {
+              "season": "2027",
+              "round": 2,
+              "receiverRosterId": 2,
+              "receiverName": "Megatron9",
+              "receiverTeam": "Megatron's Revenge",
+              "senderRosterId": 1,
+              "senderName": "SleeperDemo",
+              "senderTeam": "Sleeper Demo Star",
+              "originalOwnerRosterId": 1,
+              "originalOwnerName": "SleeperDemo",
+              "originalOwnerTeam": "Sleeper Demo Star"
+            }
+          ]
+        },
+        {
+          "transaction_id": "demo_trade_2",
+          "leagueName": "Apex Dynasty Pro 2026",
+          "leagueId": "demo_league_1",
+          "season": "2026",
+          "type": "trade",
+          "status": "complete",
+          "created": Date.now() - 5 * 24 * 60 * 60 * 1000,
+          "status_updated": Date.now() - 5 * 24 * 60 * 60 * 1000,
+          "week": 1,
+          "roster_ids": [1, 3],
+          "richAdds": [
+            {
+              "player": resolvePlayer("8112"), // Drake London (WR)
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("11632"), // Malik Nabers (WR)
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("7547"), // Amon-Ra St. Brown (WR)
+              "rosterId": 3,
+              "ownerName": "BradyGoat",
+              "teamName": "Tom's TB12",
+              "userId": "demo_owner_3"
             }
           ],
           "richDrops": [
             {
-              "player": resolvePlayer("4866"),
+              "player": resolvePlayer("7547"),
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("8112"),
+              "rosterId": 3,
+              "ownerName": "BradyGoat",
+              "teamName": "Tom's TB12",
+              "userId": "demo_owner_3"
+            },
+            {
+              "player": resolvePlayer("11632"),
               "rosterId": 3,
               "ownerName": "BradyGoat",
               "teamName": "Tom's TB12",
@@ -1293,6 +1556,65 @@ app.get("/api/sleeper/user/:userId/recent-trades", async (req, res) => {
             }
           ],
           "richDraftPicks": []
+        },
+        {
+          "transaction_id": "demo_trade_3",
+          "leagueName": "Gridiron Overlords Dynasty",
+          "leagueId": "demo_league_3",
+          "season": "2026",
+          "type": "trade",
+          "status": "complete",
+          "created": Date.now() - 9 * 24 * 60 * 60 * 1000,
+          "status_updated": Date.now() - 9 * 24 * 60 * 60 * 1000,
+          "week": 1,
+          "roster_ids": [1, 4],
+          "richAdds": [
+            {
+              "player": resolvePlayer("10859"), // Sam LaPorta (TE)
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("7553"), // Kyle Pitts (TE)
+              "rosterId": 4,
+              "ownerName": "RunCmc",
+              "teamName": "Christian Soldiers",
+              "userId": "demo_owner_4"
+            }
+          ],
+          "richDrops": [
+            {
+              "player": resolvePlayer("7553"),
+              "rosterId": 1,
+              "ownerName": "SleeperDemo",
+              "teamName": "Sleeper Demo Star",
+              "userId": "demo_99999"
+            },
+            {
+              "player": resolvePlayer("10859"),
+              "rosterId": 4,
+              "ownerName": "RunCmc",
+              "teamName": "Christian Soldiers",
+              "userId": "demo_owner_4"
+            }
+          ],
+          "richDraftPicks": [
+            {
+              "season": "2026",
+              "round": 3,
+              "receiverRosterId": 4,
+              "receiverName": "RunCmc",
+              "receiverTeam": "Christian Soldiers",
+              "senderRosterId": 1,
+              "senderName": "SleeperDemo",
+              "senderTeam": "Sleeper Demo Star",
+              "originalOwnerRosterId": 1,
+              "originalOwnerName": "SleeperDemo",
+              "originalOwnerTeam": "Sleeper Demo Star"
+            }
+          ]
         }
       ]
     });

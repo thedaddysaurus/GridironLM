@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { RichRoster } from "../types";
-import { Trophy, RefreshCw, Calendar, Search } from "lucide-react";
+import { Trophy, RefreshCw, Calendar, Search, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { getOwnerTheme } from "../utils/theme";
 
 interface StandingsViewProps {
@@ -30,6 +31,7 @@ export default function StandingsView({
   const [standings, setStandings] = useState<RichRoster[]>(initialStandings);
   const [loading, setLoading] = useState(false);
   const [loadingSeasons, setLoadingSeasons] = useState(false);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
 
   // Keep track of parent changes
   useEffect(() => {
@@ -103,29 +105,60 @@ export default function StandingsView({
         </h2>
 
         {/* Improved Interactive Dropdown with Glowing Slate Theme */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto relative">
           <Calendar size={14} className="text-[#ba8659]" />
           <span className="text-xs text-white/45 font-mono">Select Season:</span>
           {loadingSeasons ? (
             <div className="w-24 h-8 bg-white/5 animate-pulse rounded border border-white/10" />
           ) : seasons.length > 0 ? (
-            <div className="relative">
-              <select
-                value={selectedLeagueId}
-                onChange={(e) => {
-                  const selectedBrief = seasons.find(s => s.leagueId === e.target.value);
-                  if (selectedBrief) {
-                    handleSeasonChange(selectedBrief.leagueId, selectedBrief.season);
-                  }
-                }}
-                className="bg-[#09090b]/90 text-slate-100 border border-[#ba8659]/30 rounded-xl px-3 py-1.5 text-xs font-mono font-bold focus:outline-none focus:border-[#ba8659] hover:bg-white/5 cursor-pointer shadow-lg shadow-black/30 transition-all uppercase tracking-wide"
+            <div className="relative inline-block w-48 z-30" id="standings-season-dropdown-container">
+              <button
+                type="button"
+                onClick={() => setSeasonDropdownOpen(!seasonDropdownOpen)}
+                className="w-full inline-flex justify-between items-center gap-2.5 px-3.5 py-2 border border-[#ba8659]/30 rounded-xl bg-[#090b0a] text-2xs font-sans font-semibold tracking-wide uppercase text-[#fcf9f5] shadow-xl hover:bg-slate-900 focus:outline-none cursor-pointer transition-all"
               >
-                {seasons.map((s) => (
-                  <option key={s.leagueId} value={s.leagueId} className="bg-[#121110]">
-                    {s.season} {s.season === currentSeason ? "(Active)" : ""}
-                  </option>
-                ))}
-              </select>
+                <span className="truncate">
+                  {seasons.find(s => s.leagueId === selectedLeagueId)?.season || selectedSeason} {seasons.find(s => s.leagueId === selectedLeagueId)?.season === currentSeason ? "(Active)" : ""}
+                </span>
+                <ChevronDown size={12} className={`text-[#ba8659] transition-transform duration-200 ${seasonDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {seasonDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setSeasonDropdownOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.12 }}
+                      className="absolute right-0 mt-2 w-full rounded-xl bg-[#090b0a] border border-[#ba8659]/20 shadow-2xl z-20 overflow-hidden backdrop-blur-xl"
+                    >
+                      <div className="p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
+                        {seasons.map((s) => (
+                          <button
+                            key={s.leagueId}
+                            onClick={() => {
+                              handleSeasonChange(s.leagueId, s.season);
+                              setSeasonDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-1.5 text-3xs font-sans font-semibold rounded-lg text-left transition-all cursor-pointer ${
+                              selectedLeagueId === s.leagueId
+                                ? "bg-white/10 text-white"
+                                : "text-white/60 hover:text-white hover:bg-white/5"
+                            }`}
+                          >
+                            <span>{s.season} SEASON</span>
+                            {s.season === currentSeason && (
+                              <span className="text-[9px] text-[#ba8659] bg-[#ba8659]/10 px-1 py-0.5 rounded uppercase tracking-widest font-bold scale-90">Active</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <span className="text-xs font-mono font-bold text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">

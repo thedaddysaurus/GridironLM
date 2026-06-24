@@ -47,37 +47,53 @@ export default function TrendingTicker() {
   const activeList = type === "adds" ? adds : drops;
 
   return (
-    <div className="w-full bg-[#0c0f0e]/95 border-b border-white/5 backdrop-blur-md flex items-center h-10 pointer-events-auto relative z-30" id="trending-ticker-container">
-      {/* Ticker Control Label Badge */}
-      <div className="flex items-center gap-1.5 h-full px-4 border-r border-white/5 shrink-0 bg-[#0e0d0c] relative z-20" id="ticker-badge-panel">
-        <Zap className="text-[#ba8659] animate-pulse" size={12} />
-        <span className="text-[10px] font-sans font-extrabold tracking-wider uppercase text-slate-300 animate-pulse">NFL TRENDING</span>
-        <div className="flex items-center gap-0.5 ml-2 p-0.5 bg-white/5 rounded-lg border border-white/10">
-          <button
-            onClick={() => setType("adds")}
-            className={`px-2 py-0.5 rounded text-[9px] font-sans font-black uppercase transition-all cursor-pointer ${
-              type === "adds"
-                ? "bg-[#ba8659]/20 text-[#ba8659] border border-[#ba8659]/30 shadow-md"
-                : "text-slate-400 hover:text-white"
-            }`}
+    <div className="w-full bg-[#0c0f0e]/95 border-b border-white/5 backdrop-blur-md flex flex-col sm:flex-row sm:items-center sm:h-10 pointer-events-auto relative z-30" id="trending-ticker-container">
+      {/* Top Controls Row for Mobile, Left Panel for Desktop */}
+      <div className="flex items-center justify-between sm:justify-start gap-1.5 w-full sm:w-auto h-9 sm:h-full px-3 sm:px-4 border-b sm:border-b-0 sm:border-r border-white/5 shrink-0 bg-[#0e0d0c] relative z-20" id="ticker-badge-panel">
+        <div className="flex items-center gap-1.5">
+          <Zap className="text-[#ba8659] animate-pulse" size={12} />
+          <span className="text-[10px] font-sans font-extrabold tracking-wider uppercase text-slate-300 animate-pulse">NFL TRENDING</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Adds/Drops Filter Buttons */}
+          <div className="flex items-center gap-0.5 p-0.5 bg-white/5 rounded-lg border border-white/10">
+            <button
+              onClick={() => setType("adds")}
+              className={`px-2 py-0.5 rounded text-[9px] font-sans font-black uppercase transition-all cursor-pointer ${
+                type === "adds"
+                  ? "bg-[#ba8659]/20 text-[#ba8659] border border-[#ba8659]/30 shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Adds
+            </button>
+            <button
+              onClick={() => setType("drops")}
+              className={`px-2 py-0.5 rounded text-[9px] font-sans font-black uppercase transition-all cursor-pointer ${
+                type === "drops"
+                  ? "bg-[#a27248]/20 text-[#cca57d] border border-[#a27248]/30 shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Drops
+            </button>
+          </div>
+
+          {/* Sync Button on Mobile inside this row */}
+          <button 
+            onClick={fetchTrending}
+            disabled={loading}
+            className="sm:hidden p-1 text-slate-400 hover:text-white transition-all rounded bg-white/5 border border-white/10 cursor-pointer disabled:opacity-50"
+            title="Sync Live Transactions"
           >
-            Adds
-          </button>
-          <button
-            onClick={() => setType("drops")}
-            className={`px-2 py-0.5 rounded text-[9px] font-sans font-black uppercase transition-all cursor-pointer ${
-              type === "drops"
-                ? "bg-[#a27248]/20 text-[#cca57d] border border-[#a27248]/30 shadow-md"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Drops
+            <RefreshCw size={10} className={loading ? "animate-spin text-[#ba8659]" : ""} />
           </button>
         </div>
       </div>
 
       {/* Ticker Content Section */}
-      <div className="flex-1 overflow-hidden relative h-full flex items-center select-none" id="ticker-scroll-track">
+      <div className="flex-1 overflow-hidden relative h-8 sm:h-full flex items-center select-none" id="ticker-scroll-track">
         {loading ? (
           <div className="flex items-center gap-2 pl-4 text-3xs font-mono text-white/45">
             <RefreshCw className="animate-spin text-[#ba8659]" size={11} />
@@ -149,11 +165,11 @@ export default function TrendingTicker() {
         )}
       </div>
 
-      {/* Trigger Sync Data button */}
+      {/* Trigger Sync Data button (Desktop only) */}
       <button 
         onClick={fetchTrending}
         disabled={loading}
-        className="px-3.5 border-l border-white/5 text-slate-400 hover:text-white transition-all h-full bg-[#0e0d0c] flex items-center justify-center cursor-pointer disabled:opacity-50 relative z-20"
+        className="hidden sm:flex px-3.5 border-l border-white/5 text-slate-400 hover:text-white transition-all h-full bg-[#0e0d0c] items-center justify-center cursor-pointer disabled:opacity-50 relative z-20"
         title="Sync Live Transactions"
         id="ticker-sync-btn"
       >
